@@ -52,9 +52,12 @@ final class HttpExemptionListenerTest extends TestCase
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn($isActive);
 
-        $admin = new class($isAdmin) implements AdminSessionDetectorInterface {
+        $admin = new class ($isAdmin) implements AdminSessionDetectorInterface {
             public function __construct(private bool $is) {}
-            public function isLoggedInAdmin(Request $request): bool { return $this->is; }
+            public function isLoggedInAdmin(Request $request): bool
+            {
+                return $this->is;
+            }
         };
 
         $evaluator = new ExemptionEvaluator(

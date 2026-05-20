@@ -1,10 +1,20 @@
 # Pimcore Advanced Maintenance Mode
 
+[![Latest Stable Version](https://img.shields.io/packagist/v/2chain/pimcore-advanced-maintenance-mode.svg)](https://packagist.org/packages/2chain/pimcore-advanced-maintenance-mode)
+[![CI](https://github.com/2-chain/pimcore-advanced-maintenance-mode/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/2-chain/pimcore-advanced-maintenance-mode/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/2-chain/pimcore-advanced-maintenance-mode/main.svg)](https://codecov.io/gh/2-chain/pimcore-advanced-maintenance-mode)
+[![License](https://img.shields.io/packagist/l/2chain/pimcore-advanced-maintenance-mode.svg)](LICENSE.md)
+
 Pimcore bundle that extends Pimcore's built-in maintenance mode with **rule-based exemptions** (HTTP routes, CLI commands, IP/CIDR, PHP attributes) and ergonomic improvements (`Retry-After` header, activation reason, admin-session bypass, debug command).
 
-- **Package:** `2chain/pimcore-advanced-maintenance-mode`
-- **Targets:** PHP 8.3+, Pimcore 11/12, Symfony 6.4 / 7
-- **License:** GPL-3.0-or-later
+|||
+|-|--|
+| Package | `2chain/pimcore-advanced-maintenance-mode` |
+| PHP namespace | `TwoChain\PimcoreAdvancedMaintenanceModeBundle\` |
+| Bundle class | `TwoChain\PimcoreAdvancedMaintenanceModeBundle\PimcoreAdvancedMaintenanceModeBundle` |
+| Pimcore | `^11.0 \|\| ^12.0` |
+| Symfony | `^6.4 \|\| ^7.0` |
+| License | [GPL-3.0-or-later](LICENSE.md) |
 
 ## Why
 

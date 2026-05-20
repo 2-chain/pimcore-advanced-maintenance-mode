@@ -19,8 +19,8 @@ final class ExtensionWiringTest extends TestCase
         $container = new ContainerBuilder();
         // Default env values for our env-driven rules.
         $container->setParameter('env(default::ADVANCED_MAINTENANCE_EXEMPT_COMMANDS)', '');
-        $container->setParameter('env(default::ADVANCED_MAINTENANCE_EXEMPT_ROUTES)',   '');
-        $container->setParameter('env(default::ADVANCED_MAINTENANCE_EXEMPT_IPS)',      '');
+        $container->setParameter('env(default::ADVANCED_MAINTENANCE_EXEMPT_ROUTES)', '');
+        $container->setParameter('env(default::ADVANCED_MAINTENANCE_EXEMPT_IPS)', '');
 
         $ext = new TwoChainAdvancedMaintenanceModeExtension();
         $ext->load([[
@@ -39,7 +39,7 @@ final class ExtensionWiringTest extends TestCase
         // Hydrate to Rule DTOs for assertion.
         $rules = (new CompiledRulesProvider($rulesData))->getRules();
 
-        $ids = \array_map(static fn ($r) => $r->id, $rules);
+        $ids = \array_map(static fn($r) => $r->id, $rules);
 
         // Built-ins (all default true)
         self::assertContains('bundle-own-commands', $ids);
@@ -47,13 +47,13 @@ final class ExtensionWiringTest extends TestCase
         self::assertContains('loopback-ipv6', $ids);
 
         // YAML
-        $cmd = array_values(array_filter($rules, fn ($r) => $r instanceof CommandRule && $r->namePattern === 'messenger:*'))[0] ?? null;
+        $cmd = array_values(array_filter($rules, fn($r) => $r instanceof CommandRule && $r->namePattern === 'messenger:*'))[0] ?? null;
         self::assertNotNull($cmd);
 
-        $route = array_values(array_filter($rules, fn ($r) => $r instanceof HttpRule && $r->pathGlob === '/health'))[0] ?? null;
+        $route = array_values(array_filter($rules, fn($r) => $r instanceof HttpRule && $r->pathGlob === '/health'))[0] ?? null;
         self::assertNotNull($route);
 
-        $ip = array_values(array_filter($rules, fn ($r) => $r instanceof IpRule && $r->ipOrCidr === '10.0.0.0/8'))[0] ?? null;
+        $ip = array_values(array_filter($rules, fn($r) => $r instanceof IpRule && $r->ipOrCidr === '10.0.0.0/8'))[0] ?? null;
         self::assertNotNull($ip);
 
         // ExemptionEvaluator and DebugCommand are now built by static factories — no

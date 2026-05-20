@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 require "vendor/autoload.php";
 echo "Symfony version: " . \Symfony\Component\HttpKernel\Kernel::VERSION . PHP_EOL;
 echo "FrameworkBundle: " . (class_exists('Symfony\Bundle\FrameworkBundle\FrameworkBundle') ? 'yes' : 'no') . PHP_EOL;

@@ -18,8 +18,7 @@ final class ConsoleExemptionListener implements EventSubscriberInterface
         private readonly MaintenanceModeHelperInterface $helper,
         private readonly ExemptionEvaluator $evaluator,
         private readonly ActivationContext $context,
-    ) {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {

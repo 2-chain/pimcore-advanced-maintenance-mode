@@ -15,6 +15,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Attribute\ExemptFromMaintenanc
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\CommandRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
+use ReflectionAttribute;
+use Throwable;
 
 final class AttributeExemptionDiscoveryPass implements CompilerPassInterface
 {
@@ -62,7 +64,7 @@ final class AttributeExemptionDiscoveryPass implements CompilerPassInterface
                 $reflection = new ReflectionClass($class);
                 $classAttributes = $reflection->getAttributes(ExemptFromMaintenance::class);
                 $methods = $reflection->getMethods();
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 continue;
             }
 
@@ -73,7 +75,7 @@ final class AttributeExemptionDiscoveryPass implements CompilerPassInterface
             foreach ($methods as $method) {
                 try {
                     $methodAttributes = $method->getAttributes(ExemptFromMaintenance::class);
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     continue;
                 }
                 foreach ($methodAttributes as $attr) {
@@ -204,7 +206,7 @@ final class AttributeExemptionDiscoveryPass implements CompilerPassInterface
 
     /**
      * @template T of object
-     * @param list<\ReflectionAttribute<T>> $attrs
+     * @param list<ReflectionAttribute<T>> $attrs
      * @return T|null
      */
     private function firstRouteOrCommandAttribute(array $attrs): ?object

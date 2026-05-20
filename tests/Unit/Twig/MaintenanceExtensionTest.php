@@ -15,9 +15,12 @@ final class MaintenanceExtensionTest extends TestCase
 {
     private function context(?string $reason): ActivationContext
     {
-        $storage = new class($reason) implements ContextStorageInterface {
+        $storage = new class ($reason) implements ContextStorageInterface {
             public function __construct(private readonly ?string $reason) {}
-            public function load(): array { return ['reason' => $this->reason, 'retry_after' => null]; }
+            public function load(): array
+            {
+                return ['reason' => $this->reason, 'retry_after' => null];
+            }
             public function save(?string $reason, ?int $retryAfter): void {}
             public function clear(): void {}
         };

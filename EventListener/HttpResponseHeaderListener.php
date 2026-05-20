@@ -16,8 +16,7 @@ final class HttpResponseHeaderListener implements EventSubscriberInterface
     public function __construct(
         private readonly ActivationContext $context,
         private readonly BundleConfiguration $config,
-    ) {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {

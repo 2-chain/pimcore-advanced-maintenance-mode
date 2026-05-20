@@ -16,6 +16,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\DependencyInjection
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\DependencyInjection\Compiler\Fixtures\ExemptController;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\DependencyInjection\Compiler\Fixtures\ExemptInvokableController;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\DependencyInjection\Compiler\Fixtures\ExemptWithoutSibling;
+use LogicException;
 
 final class AttributeExemptionDiscoveryPassTest extends TestCase
 {
@@ -66,7 +67,7 @@ final class AttributeExemptionDiscoveryPassTest extends TestCase
         (new AttributeExemptionDiscoveryPass())->process($c);
 
         $rules = $this->getRules($c);
-        $fallback = array_values(array_filter($rules, static fn ($r) => $r instanceof HttpRule && $r->pathGlob === '/api/internal/x'))[0] ?? null;
+        $fallback = array_values(array_filter($rules, static fn($r) => $r instanceof HttpRule && $r->pathGlob === '/api/internal/x'))[0] ?? null;
 
         self::assertNotNull($fallback);
         self::assertSame(RuleSource::Attribute, $fallback->source);
@@ -78,7 +79,7 @@ final class AttributeExemptionDiscoveryPassTest extends TestCase
         (new AttributeExemptionDiscoveryPass())->process($c);
 
         $rules = $this->getRules($c);
-        $rule = array_values(array_filter($rules, static fn ($r) => $r instanceof HttpRule && $r->id === 'order-webhook'))[0] ?? null;
+        $rule = array_values(array_filter($rules, static fn($r) => $r instanceof HttpRule && $r->id === 'order-webhook'))[0] ?? null;
 
         self::assertNotNull($rule);
         self::assertSame('app_webhooks_orders', $rule->routeName);
@@ -91,7 +92,7 @@ final class AttributeExemptionDiscoveryPassTest extends TestCase
         (new AttributeExemptionDiscoveryPass())->process($c);
 
         $rules = $this->getRules($c);
-        $rule = array_values(array_filter($rules, static fn ($r) => $r instanceof CommandRule))[0] ?? null;
+        $rule = array_values(array_filter($rules, static fn($r) => $r instanceof CommandRule))[0] ?? null;
 
         self::assertNotNull($rule);
         self::assertSame('nightly-report', $rule->id);
@@ -103,7 +104,7 @@ final class AttributeExemptionDiscoveryPassTest extends TestCase
     {
         $c = $this->buildContainer([ExemptWithoutSibling::class]);
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         (new AttributeExemptionDiscoveryPass())->process($c);
     }
 

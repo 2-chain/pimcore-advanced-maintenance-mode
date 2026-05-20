@@ -9,7 +9,5 @@ use Attribute;
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD)]
 final class ExemptFromMaintenance
 {
-    public function __construct(public readonly ?string $id = null)
-    {
-    }
+    public function __construct(public readonly ?string $id = null) {}
 }

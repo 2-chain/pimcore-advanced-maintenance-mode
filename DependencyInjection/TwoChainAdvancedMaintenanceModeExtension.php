@@ -10,6 +10,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\RuleCompiler;
+use Throwable;
 
 /** @phpstan-import-type ProcessedConfig from RuleCompiler */
 final class TwoChainAdvancedMaintenanceModeExtension extends Extension
@@ -31,21 +32,21 @@ final class TwoChainAdvancedMaintenanceModeExtension extends Extension
         try {
             $raw = $container->resolveEnvPlaceholders('%env(default::ADVANCED_MAINTENANCE_EXEMPT_COMMANDS)%', true);
             $envCommands = \is_scalar($raw) ? (string) $raw : '';
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $envCommands = '';
         }
 
         try {
             $raw = $container->resolveEnvPlaceholders('%env(default::ADVANCED_MAINTENANCE_EXEMPT_ROUTES)%', true);
             $envRoutes = \is_scalar($raw) ? (string) $raw : '';
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $envRoutes = '';
         }
 
         try {
             $raw = $container->resolveEnvPlaceholders('%env(default::ADVANCED_MAINTENANCE_EXEMPT_IPS)%', true);
             $envIps = \is_scalar($raw) ? (string) $raw : '';
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $envIps = '';
         }
 

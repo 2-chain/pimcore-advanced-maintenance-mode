@@ -79,25 +79,33 @@ final class TestKernel extends Kernel
         $builder->setAlias(\Symfony\Component\Routing\Matcher\RequestMatcherInterface::class, 'router.default');
 
         // Override Pimcore's MaintenanceModeHelperInterface with our in-memory stub.
-        $builder->setDefinition(InMemoryMaintenanceModeHelper::class,
-            (new Definition(InMemoryMaintenanceModeHelper::class))->setPublic(true));
+        $builder->setDefinition(
+            InMemoryMaintenanceModeHelper::class,
+            (new Definition(InMemoryMaintenanceModeHelper::class))->setPublic(true)
+        );
         $builder->setAlias(MaintenanceModeHelperInterface::class, InMemoryMaintenanceModeHelper::class)->setPublic(true);
 
         // Override admin detector.
-        $builder->setDefinition(StubAdminSessionDetector::class,
-            (new Definition(StubAdminSessionDetector::class))->setPublic(true));
+        $builder->setDefinition(
+            StubAdminSessionDetector::class,
+            (new Definition(StubAdminSessionDetector::class))->setPublic(true)
+        );
         $builder->setAlias(AdminSessionDetectorInterface::class, StubAdminSessionDetector::class)->setPublic(true);
 
         // Override storage with in-memory variant.
-        $builder->setDefinition(InMemoryContextStorage::class,
-            (new Definition(InMemoryContextStorage::class))->setPublic(true));
+        $builder->setDefinition(
+            InMemoryContextStorage::class,
+            (new Definition(InMemoryContextStorage::class))->setPublic(true)
+        );
         $builder->setAlias(ContextStorageInterface::class, InMemoryContextStorage::class)->setPublic(true);
 
         // Make ActivationContext public so tests can set reason/retry-after.
-        $builder->setDefinition(ActivationContext::class,
+        $builder->setDefinition(
+            ActivationContext::class,
             (new Definition(ActivationContext::class))
                 ->setPublic(true)
-                ->setAutowired(true));
+                ->setAutowired(true)
+        );
 
         // Pimcore-mimicking stub listener — returns 503 if maintenance active.
         $builder->register('test.pimcore_maintenance_stub', PimcoreMaintenancePageStub::class)
@@ -196,9 +204,7 @@ final class MakeServicesPublicPass implements \Symfony\Component\DependencyInjec
  */
 final class PimcoreMaintenancePageStub implements EventSubscriberInterface
 {
-    public function __construct(private readonly MaintenanceModeHelperInterface $helper)
-    {
-    }
+    public function __construct(private readonly MaintenanceModeHelperInterface $helper) {}
 
     public static function getSubscribedEvents(): array
     {

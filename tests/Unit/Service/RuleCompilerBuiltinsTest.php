@@ -29,7 +29,7 @@ final class RuleCompilerBuiltinsTest extends TestCase
             'bundle_own_commands' => true, 'symfony_info_commands' => false, 'loopback' => false,
         ]));
 
-        $cmd = array_values(array_filter($rules, fn ($r) => $r instanceof CommandRule))[0] ?? null;
+        $cmd = array_values(array_filter($rules, fn($r) => $r instanceof CommandRule))[0] ?? null;
         self::assertNotNull($cmd);
         self::assertSame('bundle-own-commands', $cmd->id);
         self::assertSame('pimcore:advanced-maintenance:*', $cmd->namePattern);
@@ -42,7 +42,7 @@ final class RuleCompilerBuiltinsTest extends TestCase
             'bundle_own_commands' => false, 'symfony_info_commands' => true, 'loopback' => false,
         ]));
 
-        $patterns = \array_map(static fn ($r) => $r->namePattern, $rules);
+        $patterns = \array_map(static fn($r) => $r->namePattern, $rules);
         self::assertContains('help', $patterns);
         self::assertContains('list', $patterns);
         self::assertContains('_complete', $patterns);
@@ -56,7 +56,7 @@ final class RuleCompilerBuiltinsTest extends TestCase
             'bundle_own_commands' => false, 'symfony_info_commands' => false, 'loopback' => true,
         ]));
 
-        $addrs = \array_map(static fn ($r) => $r->ipOrCidr, \array_filter($rules, fn ($r) => $r instanceof IpRule));
+        $addrs = \array_map(static fn($r) => $r->ipOrCidr, \array_filter($rules, fn($r) => $r instanceof IpRule));
         self::assertEqualsCanonicalizing(['127.0.0.1', '::1'], \array_values($addrs));
     }
 

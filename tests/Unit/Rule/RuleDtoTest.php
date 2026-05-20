@@ -10,6 +10,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\ExemptionMatch;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\IpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
+use InvalidArgumentException;
 
 final class RuleDtoTest extends TestCase
 {
@@ -34,7 +35,7 @@ final class RuleDtoTest extends TestCase
 
     public function testHttpRuleRejectsAllFieldsNull(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new HttpRule(id: 'x', source: RuleSource::Yaml);
     }
@@ -50,7 +51,7 @@ final class RuleDtoTest extends TestCase
 
     public function testCommandRuleRejectsEmptyPattern(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new CommandRule(id: 'x', namePattern: '', source: RuleSource::Yaml);
     }
@@ -65,7 +66,7 @@ final class RuleDtoTest extends TestCase
 
     public function testIpRuleRejectsEmptyAddress(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new IpRule(id: 'x', ipOrCidr: '', source: RuleSource::Yaml);
     }

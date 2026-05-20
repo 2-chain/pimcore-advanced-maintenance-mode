@@ -108,7 +108,9 @@ final class DebugCommand extends Command
 
     private function printRules(OutputInterface $output): void
     {
-        $http = []; $cmd = []; $ip = [];
+        $http = [];
+        $cmd = [];
+        $ip = [];
         foreach ($this->compiledRules as $r) {
             match (true) {
                 $r instanceof HttpRule    => $http[] = $r,
@@ -138,10 +140,18 @@ final class DebugCommand extends Command
     private function describeHttp(HttpRule $r): string
     {
         $bits = [];
-        if ($r->pathGlob !== null)  { $bits[] = $r->pathGlob; }
-        if ($r->routeName !== null) { $bits[] = 'route=' . $r->routeName; }
-        if ($r->host !== null)      { $bits[] = 'host=' . $r->host; }
-        if ($r->methods !== [])     { $bits[] = \implode(',', $r->methods) . ' only'; }
+        if ($r->pathGlob !== null) {
+            $bits[] = $r->pathGlob;
+        }
+        if ($r->routeName !== null) {
+            $bits[] = 'route=' . $r->routeName;
+        }
+        if ($r->host !== null) {
+            $bits[] = 'host=' . $r->host;
+        }
+        if ($r->methods !== []) {
+            $bits[] = \implode(',', $r->methods) . ' only';
+        }
 
         return \sprintf('%s/%s            %s', $r->source->value, $r->id, \implode(' / ', $bits));
     }

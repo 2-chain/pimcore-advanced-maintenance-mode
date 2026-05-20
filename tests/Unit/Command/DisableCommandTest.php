@@ -20,9 +20,15 @@ final class DisableCommandTest extends TestCase
 
         $storage = new class implements ContextStorageInterface {
             public bool $cleared = false;
-            public function load(): array { return ['reason' => null, 'retry_after' => null]; }
+            public function load(): array
+            {
+                return ['reason' => null, 'retry_after' => null];
+            }
             public function save(?string $reason, ?int $retryAfter): void {}
-            public function clear(): void { $this->cleared = true; }
+            public function clear(): void
+            {
+                $this->cleared = true;
+            }
         };
 
         $tester = new CommandTester(new DisableCommand($helper, new ActivationContext($storage)));

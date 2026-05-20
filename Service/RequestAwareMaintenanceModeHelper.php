@@ -15,8 +15,7 @@ final class RequestAwareMaintenanceModeHelper implements MaintenanceModeHelperIn
     public function __construct(
         private readonly MaintenanceModeHelperInterface $inner,
         private readonly RequestStack $requestStack,
-    ) {
-    }
+    ) {}
 
     #[Override]
     public function isActive(?string $matchSessionId = null): bool

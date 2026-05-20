@@ -11,9 +11,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 
 final class MaintenanceExtension extends AbstractExtension
 {
-    public function __construct(private readonly ActivationContext $context)
-    {
-    }
+    public function __construct(private readonly ActivationContext $context) {}
 
     #[Override]
     public function getFunctions(): array

@@ -6,9 +6,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
 
 final class ActivationContext
 {
-    public function __construct(private readonly ContextStorageInterface $storage)
-    {
-    }
+    public function __construct(private readonly ContextStorageInterface $storage) {}
 
     public function getReason(): ?string
     {

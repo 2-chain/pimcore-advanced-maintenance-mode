@@ -23,9 +23,7 @@ final class CompiledRulesProvider
     /**
      * @param list<SerializedRule> $rulesData
      */
-    public function __construct(private readonly array $rulesData)
-    {
-    }
+    public function __construct(private readonly array $rulesData) {}
 
     /**
      * @return list<HttpRule|CommandRule|IpRule>

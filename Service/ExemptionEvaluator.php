@@ -88,10 +88,18 @@ final class ExemptionEvaluator
         }
 
         $parts = [];
-        if ($hit->pathGlob !== null)  { $parts[] = 'path=' . $hit->pathGlob; }
-        if ($hit->routeName !== null) { $parts[] = 'route=' . $hit->routeName; }
-        if ($hit->host !== null)      { $parts[] = 'host=' . $hit->host; }
-        if ($hit->methods !== [])     { $parts[] = 'methods=' . \implode(',', $hit->methods); }
+        if ($hit->pathGlob !== null) {
+            $parts[] = 'path=' . $hit->pathGlob;
+        }
+        if ($hit->routeName !== null) {
+            $parts[] = 'route=' . $hit->routeName;
+        }
+        if ($hit->host !== null) {
+            $parts[] = 'host=' . $hit->host;
+        }
+        if ($hit->methods !== []) {
+            $parts[] = 'methods=' . \implode(',', $hit->methods);
+        }
 
         return 'HTTP rule (' . \implode(', ', $parts) . ')';
     }

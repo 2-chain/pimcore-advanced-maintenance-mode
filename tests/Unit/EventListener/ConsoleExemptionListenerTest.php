@@ -22,14 +22,18 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\CommandRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\IpRuleMatcher;
+use RuntimeException;
 
 final class ConsoleExemptionListenerTest extends TestCase
 {
     private function fakeContext(?string $reason = null): ActivationContext
     {
-        $storage = new class($reason) implements ContextStorageInterface {
+        $storage = new class ($reason) implements ContextStorageInterface {
             public function __construct(private readonly ?string $reason) {}
-            public function load(): array { return ['reason' => $this->reason, 'retry_after' => null]; }
+            public function load(): array
+            {
+                return ['reason' => $this->reason, 'retry_after' => null];
+            }
             public function save(?string $reason, ?int $retryAfter): void {}
             public function clear(): void {}
         };
@@ -122,7 +126,7 @@ final class ConsoleExemptionListenerTest extends TestCase
         ]);
         $event = $this->makeEvent('app:other');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('In maintenance mode — set --ignore-maintenance-mode to force execution.');
 
         $listener->onConsoleCommand($event);
@@ -137,7 +141,7 @@ final class ConsoleExemptionListenerTest extends TestCase
         );
         $event = $this->makeEvent('app:other');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('In maintenance mode (reason: DB migration v3.5) — set --ignore-maintenance-mode to force execution.');
 
         $listener->onConsoleCommand($event);

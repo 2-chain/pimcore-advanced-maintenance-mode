@@ -86,6 +86,44 @@ jobs:
         run: vendor/bin/phpunit --testsuite ${{ matrix.suite }}
 
   # ---------------------------------------------------------------------------
+  # Coverage: re-runs the unit suite on PHP 8.3 with pcov + uploads to Codecov.
+  # Functional tests are skipped here — they're integration-shaped (TestKernel
+  # boot, browser-kit) and don't move the line-coverage needle meaningfully.
+  # ---------------------------------------------------------------------------
+  coverage:
+    name: Coverage (unit, PHP 8.3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP 8.3 with pcov
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, exif, gd, intl, pdo_mysql, pdo_sqlite, redis, zip
+          # pcov is ~10× faster than xdebug for line-coverage collection.
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: --prefer-dist --no-progress
+
+      - name: Run unit tests with coverage
+        run: vendor/bin/phpunit --testsuite unit --coverage-clover coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          # Public repos don't need a token; this stays unset until the repo
+          # is configured at codecov.io. Once linked, set CODECOV_TOKEN in
+          # the repo secrets and uncomment:
+          # token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # ---------------------------------------------------------------------------
   # Aggregator job: a single green check for branch protection to require.
   # Without this, branch protection would need to list every matrix entry
   # individually (2 PHP × 2 suites = 4 separate check names + quality).
@@ -97,7 +135,7 @@ jobs:
   ci-passed:
     name: All required checks passed
     runs-on: ubuntu-latest
-    needs: [quality, test]
+    needs: [quality, test, coverage]
     if: always()
     steps:
       - name: Verify upstream jobs succeeded
@@ -108,6 +146,10 @@ jobs:
           fi
           if [[ "${{ needs.test.result }}" != "success" ]]; then
             echo "::error::Test matrix did not succeed (result: ${{ needs.test.result }})"
+            exit 1
+          fi
+          if [[ "${{ needs.coverage.result }}" != "success" ]]; then
+            echo "::error::Coverage job did not succeed (result: ${{ needs.coverage.result }})"
             exit 1
           fi
           echo "All required checks passed."

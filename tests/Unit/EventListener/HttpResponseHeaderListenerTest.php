@@ -20,9 +20,12 @@ final class HttpResponseHeaderListenerTest extends TestCase
 {
     private function fakeContext(?string $reason, ?int $retryAfter): ActivationContext
     {
-        $storage = new class($reason, $retryAfter) implements ContextStorageInterface {
+        $storage = new class ($reason, $retryAfter) implements ContextStorageInterface {
             public function __construct(private readonly ?string $reason, private readonly ?int $retryAfter) {}
-            public function load(): array { return ['reason' => $this->reason, 'retry_after' => $this->retryAfter]; }
+            public function load(): array
+            {
+                return ['reason' => $this->reason, 'retry_after' => $this->retryAfter];
+            }
             public function save(?string $reason, ?int $retryAfter): void {}
             public function clear(): void {}
         };

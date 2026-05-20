@@ -10,6 +10,5 @@ final readonly class ExemptionMatch
         public string $ruleId,
         public RuleSource $source,
         public string $description,
-    ) {
-    }
+    ) {}
 }

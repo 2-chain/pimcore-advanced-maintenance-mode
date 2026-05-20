@@ -6,6 +6,8 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Attribute;
 
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Attribute\ExemptFromMaintenance;
+use Attribute;
+use ReflectionClass;
 
 final class ExemptFromMaintenanceTest extends TestCase
 {
@@ -23,8 +25,8 @@ final class ExemptFromMaintenanceTest extends TestCase
 
     public function testAttributeTargetsClassAndMethod(): void
     {
-        $ref = new \ReflectionClass(ExemptFromMaintenance::class);
-        $attr = $ref->getAttributes(\Attribute::class)[0]->newInstance();
-        self::assertSame(\Attribute::TARGET_CLASS | \Attribute::TARGET_METHOD, $attr->flags);
+        $ref = new ReflectionClass(ExemptFromMaintenance::class);
+        $attr = $ref->getAttributes(Attribute::class)[0]->newInstance();
+        self::assertSame(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD, $attr->flags);
     }
 }

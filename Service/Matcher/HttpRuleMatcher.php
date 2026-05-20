@@ -16,8 +16,7 @@ final class HttpRuleMatcher
     public function __construct(
         private readonly IpRuleMatcher $ipMatcher,
         private readonly RequestMatcherInterface $router,
-    ) {
-    }
+    ) {}
 
     /**
      * @param list<HttpRule> $httpRules

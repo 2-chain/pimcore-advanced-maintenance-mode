@@ -19,9 +19,21 @@ final class EnableCommandTest extends TestCase
             public ?string $reason = null;
             public ?int $retry = null;
             public bool $cleared = false;
-            public function load(): array { return ['reason' => $this->reason, 'retry_after' => $this->retry]; }
-            public function save(?string $reason, ?int $retryAfter): void { $this->reason = $reason; $this->retry = $retryAfter; }
-            public function clear(): void { $this->cleared = true; $this->reason = null; $this->retry = null; }
+            public function load(): array
+            {
+                return ['reason' => $this->reason, 'retry_after' => $this->retry];
+            }
+            public function save(?string $reason, ?int $retryAfter): void
+            {
+                $this->reason = $reason;
+                $this->retry = $retryAfter;
+            }
+            public function clear(): void
+            {
+                $this->cleared = true;
+                $this->reason = null;
+                $this->retry = null;
+            }
         };
         return [new ActivationContext($storage), $storage];
     }

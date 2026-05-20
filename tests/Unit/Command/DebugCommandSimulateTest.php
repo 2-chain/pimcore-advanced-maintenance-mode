@@ -27,7 +27,10 @@ final class DebugCommandSimulateTest extends TestCase
     {
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $storage = new class implements ContextStorageInterface {
-            public function load(): array { return ['reason' => null, 'retry_after' => null]; }
+            public function load(): array
+            {
+                return ['reason' => null, 'retry_after' => null];
+            }
             public function save(?string $reason, ?int $retryAfter): void {}
             public function clear(): void {}
         };

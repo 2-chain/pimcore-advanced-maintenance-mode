@@ -28,7 +28,7 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
         }
 
         return [
-            'reason'      => isset($data['reason'])      && \is_string($data['reason'])  ? $data['reason']      : null,
+            'reason'      => isset($data['reason'])      && \is_string($data['reason']) ? $data['reason'] : null,
             'retry_after' => isset($data['retry_after']) && \is_int($data['retry_after']) ? $data['retry_after'] : null,
         ];
     }

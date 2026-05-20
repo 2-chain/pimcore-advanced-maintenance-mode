@@ -21,8 +21,7 @@ final class HttpExemptionListener implements EventSubscriberInterface
         private readonly ExemptionEvaluator $evaluator,
         private readonly AdminSessionDetectorInterface $adminDetector,
         private readonly BundleConfiguration $config,
-    ) {
-    }
+    ) {}
 
     public static function getSubscribedEvents(): array
     {
