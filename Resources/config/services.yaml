@@ -1,0 +1,50 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\:
+        resource: '../../*'
+        exclude:
+            - '../../{DependencyInjection,Resources,tests,vendor,docs}'
+            - '../../PimcoreAdvancedMaintenanceModeBundle.php'
+
+    # Interface bindings for the storage / admin-detection seams.
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ContextStorageInterface:
+        alias: TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PimcoreTmpStoreContextStorage
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetectorInterface:
+        alias: TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetector
+
+    # HttpRuleMatcher needs a request matcher for lazy route resolution. In a
+    # host project with cmf_routing or several routers, autowire can't pick one
+    # from the interface alone — point it at the standard Symfony router.
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatcher:
+        arguments:
+            $router: '@router'
+
+    # Value object built from container parameters.
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration:
+        arguments:
+            $bypassAuthenticatedAdmins: '%two_chain_advanced_maintenance_mode.bypass_authenticated_admins%'
+            $defaultRetryAfter: '%two_chain_advanced_maintenance_mode.default_retry_after%'
+
+    # CompiledRulesProvider holds the SCALAR serialized rules in its argument.
+    # The Extension and AttributeExemptionDiscoveryPass populate $rulesData.
+    # XmlDumper handles scalar arrays fine, unlike when we used Rule objects directly.
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider:
+        arguments:
+            $rulesData: []
+
+    # ExemptionEvaluator and DebugCommand are built by static factories that
+    # call the provider's getRules() (which hydrates the scalar data to Rule objects).
+    # Keeps their constructor signatures Rule-object-typed (tests stay simple).
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator:
+        factory: ['TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator', 'create']
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\DebugCommand:
+        factory: ['TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\DebugCommand', 'create']
+
+    # Listeners are auto-tagged by autoconfigure (they implement EventSubscriberInterface).
+    # No explicit kernel.event_subscriber tag needed thanks to autoconfigure: true.

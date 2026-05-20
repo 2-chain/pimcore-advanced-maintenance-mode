@@ -1,0 +1,22 @@
+parameters:
+    level: 9
+    paths:
+        - Attribute
+        - Command
+        - DependencyInjection
+        - EventListener
+        - Rule
+        - Service
+        - Twig
+        - PimcoreAdvancedMaintenanceModeBundle.php
+    ignoreErrors:
+        # phpstan-symfony's Configuration analyser is too tight about the
+        # generic resolution of NodeBuilder<ArrayNodeDefinition>'s child-node
+        # methods (booleanNode, scalarNode, integerNode, arrayNode, etc.).
+        # The calls work fine at runtime — they're the documented Symfony API.
+        -
+            message: '#Call to method (booleanNode|scalarNode|integerNode|arrayNode)\(\) on an unknown class Symfony\\Component\\Config\\Definition\\Builder\\NodeBuilder#'
+            path: DependencyInjection/Configuration.php
+
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon

@@ -1,0 +1,17 @@
+* text=auto eol=lf
+
+/tests              export-ignore
+/docs               export-ignore
+/phpunit.xml.dist   export-ignore
+/.phpunit.cache     export-ignore
+/phpstan.neon.dist  export-ignore
+/.php-cs-fixer.dist.php  export-ignore
+/.php-cs-fixer.cache     export-ignore
+/.gitignore         export-ignore
+/.gitattributes     export-ignore
+/.github            export-ignore
+/.idea              export-ignore
+/.vscode            export-ignore
+/.claude            export-ignore
+/CLAUDE.md          export-ignore
+/composer.lock      export-ignore
