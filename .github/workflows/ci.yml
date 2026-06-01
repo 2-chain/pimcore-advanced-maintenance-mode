@@ -117,10 +117,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: coverage.xml
-          # Public repos don't need a token; this stays unset until the repo
-          # is configured at codecov.io. Once linked, set CODECOV_TOKEN in
-          # the repo secrets and uncomment:
-          # token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
   # ---------------------------------------------------------------------------
