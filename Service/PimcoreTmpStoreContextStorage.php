@@ -14,36 +14,62 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
     public function load(): array
     {
         if (!\class_exists(\Pimcore\Model\Tool\TmpStore::class)) {
-            return ['reason' => null, 'retry_after' => null];
+            return $this->empty();
         }
 
         $entry = \Pimcore\Model\Tool\TmpStore::get(self::KEY);
         if ($entry === null) {
-            return ['reason' => null, 'retry_after' => null];
+            return $this->empty();
         }
 
         $data = $entry->getData();
         if (!\is_array($data)) {
-            return ['reason' => null, 'retry_after' => null];
+            return $this->empty();
         }
 
         return [
-            'reason'      => isset($data['reason'])      && \is_string($data['reason']) ? $data['reason'] : null,
-            'retry_after' => isset($data['retry_after']) && \is_int($data['retry_after']) ? $data['retry_after'] : null,
+            'reason'                            => isset($data['reason']) && \is_string($data['reason']) ? $data['reason'] : null,
+            'retry_after'                       => isset($data['retry_after']) && \is_int($data['retry_after']) ? $data['retry_after'] : null,
+            'activated_by_schedule_window_id'   => isset($data['activated_by_schedule_window_id']) && \is_string($data['activated_by_schedule_window_id']) ? $data['activated_by_schedule_window_id'] : null,
+            'expected_end_at'                   => isset($data['expected_end_at']) && \is_string($data['expected_end_at']) ? $data['expected_end_at'] : null,
+            'activated_by_health_check_failure' => isset($data['activated_by_health_check_failure']) && $data['activated_by_health_check_failure'] === true,
+            'activated_by_history_record_id'    => isset($data['activated_by_history_record_id']) && \is_int($data['activated_by_history_record_id']) ? $data['activated_by_history_record_id'] : null,
         ];
     }
 
     #[Override]
-    public function save(?string $reason, ?int $retryAfter): void
-    {
+    public function save(
+        ?string $reason,
+        ?int $retryAfter,
+        ?string $activatedByScheduleWindowId = null,
+        ?string $expectedEndAt = null,
+        bool $activatedByHealthCheckFailure = false,
+        ?int $activatedByHistoryRecordId = null,
+    ): void {
         if (!\class_exists(\Pimcore\Model\Tool\TmpStore::class)) {
             return;
         }
 
-        \Pimcore\Model\Tool\TmpStore::set(
-            self::KEY,
-            ['reason' => $reason, 'retry_after' => $retryAfter],
-        );
+        \Pimcore\Model\Tool\TmpStore::set(self::KEY, [
+            'reason'                            => $reason,
+            'retry_after'                       => $retryAfter,
+            'activated_by_schedule_window_id'   => $activatedByScheduleWindowId,
+            'expected_end_at'                   => $expectedEndAt,
+            'activated_by_health_check_failure' => $activatedByHealthCheckFailure,
+            'activated_by_history_record_id'    => $activatedByHistoryRecordId,
+        ]);
+    }
+
+    private function empty(): array
+    {
+        return [
+            'reason'                            => null,
+            'retry_after'                       => null,
+            'activated_by_schedule_window_id'   => null,
+            'expected_end_at'                   => null,
+            'activated_by_health_check_failure' => false,
+            'activated_by_history_record_id'    => null,
+        ];
     }
 
     #[Override]

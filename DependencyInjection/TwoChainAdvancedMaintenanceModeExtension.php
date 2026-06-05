@@ -7,14 +7,30 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\DependencyInjection;
 use Override;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\RuleCompiler;
 use Throwable;
 
 /** @phpstan-import-type ProcessedConfig from RuleCompiler */
-final class TwoChainAdvancedMaintenanceModeExtension extends Extension
+final class TwoChainAdvancedMaintenanceModeExtension extends Extension implements PrependExtensionInterface
 {
+    #[Override]
+    public function prepend(ContainerBuilder $container): void
+    {
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+
+        if ($container->hasExtension('doctrine_migrations')) {
+            $loader->load('doctrine_migrations.yml');
+        }
+
+        if ($container->hasExtension('doctrine')) {
+            $loader->load('pimcore/doctrine.yaml');
+        }
+    }
+
+
     #[Override]
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -23,6 +39,8 @@ final class TwoChainAdvancedMaintenanceModeExtension extends Extension
 
         $container->setParameter('two_chain_advanced_maintenance_mode.bypass_authenticated_admins', $config['bypass_authenticated_admins']);
         $container->setParameter('two_chain_advanced_maintenance_mode.default_retry_after', $config['default_retry_after']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.public_status_enabled', $config['public_status_enabled']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.public_status_token', $config['public_status_token']);
 
         $compiler = new \TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\RuleCompiler();
 

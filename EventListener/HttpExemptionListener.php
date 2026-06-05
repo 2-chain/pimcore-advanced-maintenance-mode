@@ -6,6 +6,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\EventListener;
 
 use Pimcore\Tool\MaintenanceModeHelperInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\ExemptionMatch;
@@ -46,12 +47,21 @@ final class HttpExemptionListener implements EventSubscriberInterface
             return;
         }
 
-        if ($this->config->bypassAuthenticatedAdmins && $this->adminDetector->isLoggedInAdmin($request)) {
-            $request->attributes->set(
-                '_advanced_maintenance_match',
-                new ExemptionMatch('admin-session', RuleSource::Builtin, 'authenticated Pimcore admin'),
-            );
-            return;
+        if ($this->config->bypassAuthenticatedAdmins) {
+            if ($this->isAdminLoginPath($request)) {
+                $request->attributes->set(
+                    '_advanced_maintenance_match',
+                    new ExemptionMatch('admin-login', RuleSource::Builtin, 'Pimcore admin login path'),
+                );
+                return;
+            }
+            if ($this->adminDetector->isLoggedInAdmin($request)) {
+                $request->attributes->set(
+                    '_advanced_maintenance_match',
+                    new ExemptionMatch('admin-session', RuleSource::Builtin, 'authenticated Pimcore admin'),
+                );
+                return;
+            }
         }
 
         $match = $this->evaluator->evaluateRequest($request);
@@ -62,5 +72,10 @@ final class HttpExemptionListener implements EventSubscriberInterface
 
         $request->attributes->set('_advanced_maintenance_active', true);
         // fall through → Pimcore's listener at priority 126 sets the 503
+    }
+
+    private function isAdminLoginPath(Request $request): bool
+    {
+        return str_starts_with($request->getPathInfo(), '/admin/login');
     }
 }

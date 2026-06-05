@@ -17,6 +17,14 @@ services:
     TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetectorInterface:
         alias: TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetector
 
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ScheduleEnforcementTask:
+        tags:
+            - { name: pimcore.maintenance.task, type: advanced_maintenance_schedule_enforcement }
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminBypassToken:
+        arguments:
+            $secret: '%kernel.secret%'
+
     # HttpRuleMatcher needs a request matcher for lazy route resolution. In a
     # host project with cmf_routing or several routers, autowire can't pick one
     # from the interface alone — point it at the standard Symfony router.
@@ -29,6 +37,8 @@ services:
         arguments:
             $bypassAuthenticatedAdmins: '%two_chain_advanced_maintenance_mode.bypass_authenticated_admins%'
             $defaultRetryAfter: '%two_chain_advanced_maintenance_mode.default_retry_after%'
+            $publicStatusEnabled: '%two_chain_advanced_maintenance_mode.public_status_enabled%'
+            $publicStatusToken: '%two_chain_advanced_maintenance_mode.public_status_token%'
 
     # CompiledRulesProvider holds the SCALAR serialized rules in its argument.
     # The Extension and AttributeExemptionDiscoveryPass populate $rulesData.

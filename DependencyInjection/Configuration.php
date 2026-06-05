@@ -20,6 +20,8 @@ final class Configuration implements ConfigurationInterface
             ->addDefaultsIfNotSet()
             ->children()
                 ->booleanNode('bypass_authenticated_admins')->defaultTrue()->end()
+                ->booleanNode('public_status_enabled')->defaultFalse()->end()
+                ->scalarNode('public_status_token')->defaultNull()->end()
                 ->scalarNode('default_retry_after')
                     ->defaultValue(300)
                     ->validate()

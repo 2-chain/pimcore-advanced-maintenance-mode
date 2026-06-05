@@ -2,12 +2,19 @@
 
 declare(strict_types=1);
 
-namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
+namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces;
 
 interface ContextStorageInterface
 {
     /**
-     * @return array{reason: ?string, retry_after: ?int, activated_by_schedule_window_id: ?string, expected_end_at: ?string, activated_by_health_check_failure: bool, activated_by_history_record_id: ?int}
+     * @return array{
+     *   reason: ?string,
+     *   retry_after: ?int,
+     *   activated_by_schedule_window_id: ?string,
+     *   expected_end_at: ?string,
+     *   activated_by_health_check_failure: bool,
+     *   activated_by_history_record_id: ?int,
+     * }
      */
     public function load(): array;
 

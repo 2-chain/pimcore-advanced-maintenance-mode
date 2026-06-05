@@ -154,4 +154,56 @@ final class HttpExemptionListenerTest extends TestCase
         self::assertNull($request->attributes->get('_advanced_maintenance_match'));
         self::assertTrue($request->attributes->get('_advanced_maintenance_active'));
     }
+
+    public function testAdminLoginPathIsExemptWhenBypassAdminsEnabled(): void
+    {
+        // bypassAuthenticatedAdmins=true, isAdmin=false (unauthenticated user on login page)
+        $listener = $this->makeListener(isActive: true, isAdmin: false, bypassAdmins: true);
+        $request = $this->makeRequest('/admin/login');
+        $event = $this->makeEvent($request);
+
+        $listener->onKernelRequest($event);
+
+        self::assertFalse($event->isPropagationStopped());
+        $match = $request->attributes->get('_advanced_maintenance_match');
+        self::assertNotNull($match);
+        self::assertSame('admin-login', $match->ruleId);
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('adminLoginPathVariantsProvider')]
+    public function testAdminLoginSubPathsAreExemptWhenBypassAdminsEnabled(string $path): void
+    {
+        $listener = $this->makeListener(isActive: true, isAdmin: false, bypassAdmins: true);
+        $request = $this->makeRequest($path);
+        $event = $this->makeEvent($request);
+
+        $listener->onKernelRequest($event);
+
+        $match = $request->attributes->get('_advanced_maintenance_match');
+        self::assertNotNull($match);
+        self::assertSame('admin-login', $match->ruleId);
+    }
+
+    public static function adminLoginPathVariantsProvider(): array
+    {
+        return [
+            'login_check'  => ['/admin/login_check'],
+            '2fa'          => ['/admin/login/2fa'],
+            '2fa-verify'   => ['/admin/login/2fa-verify'],
+        ];
+    }
+
+    public function testAdminLoginPathIsNotExemptWhenBypassAdminsDisabled(): void
+    {
+        // bypassAuthenticatedAdmins=false — the admin-login exemption must not apply
+        $listener = $this->makeListener(isActive: true, isAdmin: false, bypassAdmins: false);
+        $request = $this->makeRequest('/admin/login');
+        $event = $this->makeEvent($request);
+
+        $listener->onKernelRequest($event);
+
+        self::assertFalse($event->isPropagationStopped());
+        self::assertNull($request->attributes->get('_advanced_maintenance_match'));
+        self::assertTrue($request->attributes->get('_advanced_maintenance_active'));
+    }
 }

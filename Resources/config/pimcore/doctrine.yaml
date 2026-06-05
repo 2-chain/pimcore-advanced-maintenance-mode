@@ -1,0 +1,12 @@
+doctrine:
+    orm:
+        entity_managers:
+            default:
+                connection: default
+                mappings:
+                    PimcoreAdvancedMaintenanceModeBundle:
+                        type: attribute
+                        is_bundle: true
+                        dir: "Entity"
+                        prefix: TwoChain\PimcoreAdvancedMaintenanceModeBundle\Entity
+                        alias: PimcoreAdvancedMaintenanceModeBundle
