@@ -37,7 +37,7 @@ final class HttpExemptionListenerTest extends TestCase
     private function makeEvent(Request $request): RequestEvent
     {
         return new RequestEvent(
-            $this->createMock(HttpKernelInterface::class),
+            $this->createStub(HttpKernelInterface::class),
             $request,
             HttpKernelInterface::MAIN_REQUEST,
         );
@@ -49,7 +49,7 @@ final class HttpExemptionListenerTest extends TestCase
         bool $isAdmin = false,
         bool $bypassAdmins = true,
     ): HttpExemptionListener {
-        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn($isActive);
 
         $admin = new class ($isAdmin) implements AdminSessionDetectorInterface {
@@ -70,7 +70,26 @@ final class HttpExemptionListenerTest extends TestCase
             helper: $helper,
             evaluator: $evaluator,
             adminDetector: $admin,
-            config: new BundleConfiguration(bypassAuthenticatedAdmins: $bypassAdmins, defaultRetryAfter: 300),
+            config: new BundleConfiguration(
+                bypassAuthenticatedAdmins: $bypassAdmins,
+                defaultRetryAfter: 300,
+                publicStatusEnabled: false,
+                publicStatusToken: null,
+                autoInjectBanner: true,
+                defaultThresholdMinutes: 60,
+                urgencyOrangeMinutes: 30,
+                urgencyRedMinutes: 10,
+                dismissPersistence: 'session',
+                mailOnPreAnnounce: false,
+                mailOnMaintenanceStart: false,
+                mailOnMaintenanceEnd: false,
+                mailRecipients: [],
+                mailOnPreAnnounceRecipients: [],
+                mailOnMaintenanceStartRecipients: [],
+                mailOnMaintenanceEndRecipients: [],
+                mailTemplate: null,
+                notificationWebhooks: [],
+            ),
         );
     }
 
@@ -78,7 +97,7 @@ final class HttpExemptionListenerTest extends TestCase
     {
         $listener = $this->makeListener(isActive: true);
         $event = new RequestEvent(
-            $this->createMock(HttpKernelInterface::class),
+            $this->createStub(HttpKernelInterface::class),
             $this->makeRequest(),
             HttpKernelInterface::SUB_REQUEST,
         );

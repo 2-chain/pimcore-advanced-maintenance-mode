@@ -34,7 +34,14 @@ final class ConsoleExemptionListenerTest extends TestCase
             {
                 return ['reason' => $this->reason, 'retry_after' => null];
             }
-            public function save(?string $reason, ?int $retryAfter): void {}
+            public function save(
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+            ): void {}
             public function clear(): void {}
         };
         return new ActivationContext($storage);
@@ -42,7 +49,7 @@ final class ConsoleExemptionListenerTest extends TestCase
 
     private function makeListener(bool $isActive, array $rules, ?string $reason = null): ConsoleExemptionListener
     {
-        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn($isActive);
 
         $evaluator = new ExemptionEvaluator(

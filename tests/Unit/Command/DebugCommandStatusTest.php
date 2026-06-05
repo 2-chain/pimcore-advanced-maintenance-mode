@@ -25,7 +25,7 @@ final class DebugCommandStatusTest extends TestCase
 {
     private function makeCommand(bool $isActive, array $rules, ?string $reason = null): DebugCommand
     {
-        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn($isActive);
 
         $storage = new class ($reason) implements ContextStorageInterface {
@@ -34,7 +34,14 @@ final class DebugCommandStatusTest extends TestCase
             {
                 return ['reason' => $this->reason, 'retry_after' => null];
             }
-            public function save(?string $reason, ?int $retryAfter): void {}
+            public function save(
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+            ): void {}
             public function clear(): void {}
         };
 
@@ -48,7 +55,26 @@ final class DebugCommandStatusTest extends TestCase
             helper: $helper,
             evaluator: $evaluator,
             context: new ActivationContext($storage),
-            config: new BundleConfiguration(true, 300),
+            config: new BundleConfiguration(
+                bypassAuthenticatedAdmins: true,
+                defaultRetryAfter: 300,
+                publicStatusEnabled: false,
+                publicStatusToken: null,
+                autoInjectBanner: true,
+                defaultThresholdMinutes: 60,
+                urgencyOrangeMinutes: 30,
+                urgencyRedMinutes: 10,
+                dismissPersistence: 'session',
+                mailOnPreAnnounce: false,
+                mailOnMaintenanceStart: false,
+                mailOnMaintenanceEnd: false,
+                mailRecipients: [],
+                mailOnPreAnnounceRecipients: [],
+                mailOnMaintenanceStartRecipients: [],
+                mailOnMaintenanceEndRecipients: [],
+                mailTemplate: null,
+                notificationWebhooks: [],
+            ),
             compiledRules: $rules,
         );
     }

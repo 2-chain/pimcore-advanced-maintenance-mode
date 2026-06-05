@@ -43,7 +43,7 @@ final class ScheduleListCommand extends Command
 
         $now   = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $table = new Table($output);
-        $table->setHeaders(['ID', 'Type', 'Active', 'Reason', 'From / Cron', 'To / Duration', 'Timezone']);
+        $table->setHeaders(['ID', 'Type', 'Active', 'Reason', 'From / Cron', 'To / Duration', 'Timezone', 'Announce Before', 'Created By']);
 
         foreach ($windows as $w) {
             $table->addRow([
@@ -54,6 +54,8 @@ final class ScheduleListCommand extends Command
                 $w->isRecurring() ? $w->cronExpression : $w->from?->format('Y-m-d H:i') . ' UTC',
                 $w->isRecurring() ? $w->durationMinutes . ' min' : $w->to?->format('Y-m-d H:i') . ' UTC',
                 $w->timezone,
+                $w->announceBeforeMinutes > 0 ? $w->announceBeforeMinutes . ' min' : '—',
+                $w->createdByUsername !== '' ? $w->createdByUsername : '—',
             ]);
         }
 

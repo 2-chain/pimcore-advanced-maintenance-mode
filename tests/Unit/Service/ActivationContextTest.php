@@ -21,8 +21,14 @@ final class ActivationContextTest extends TestCase
                 return $this->state;
             }
 
-            public function save(?string $reason, ?int $retryAfter): void
-            {
+            public function save(
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+            ): void {
                 $this->state = ['reason' => $reason, 'retry_after' => $retryAfter];
             }
 

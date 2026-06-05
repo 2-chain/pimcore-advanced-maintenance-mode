@@ -41,6 +41,20 @@ final class TwoChainAdvancedMaintenanceModeExtension extends Extension implement
         $container->setParameter('two_chain_advanced_maintenance_mode.default_retry_after', $config['default_retry_after']);
         $container->setParameter('two_chain_advanced_maintenance_mode.public_status_enabled', $config['public_status_enabled']);
         $container->setParameter('two_chain_advanced_maintenance_mode.public_status_token', $config['public_status_token']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.auto_inject_banner',                   $config['pre_announce']['auto_inject_banner']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.default_threshold_minutes',            $config['pre_announce']['default_threshold_minutes']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.urgency_orange_minutes',               $config['pre_announce']['urgency_orange_minutes']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.urgency_red_minutes',                  $config['pre_announce']['urgency_red_minutes']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.dismiss_persistence',                  $config['pre_announce']['dismiss_persistence']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_on_pre_announce',                 $config['mail']['on_pre_announce']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_on_maintenance_start',            $config['mail']['on_maintenance_start']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_on_maintenance_end',              $config['mail']['on_maintenance_end']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_template',                        $config['mail']['template']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_recipients',                      $config['mail']['recipients']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_on_pre_announce_recipients',      $config['mail']['on_pre_announce_recipients']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_on_maintenance_start_recipients', $config['mail']['on_maintenance_start_recipients']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.mail_on_maintenance_end_recipients',   $config['mail']['on_maintenance_end_recipients']);
+        $container->setParameter('two_chain_advanced_maintenance_mode.notification_webhooks',                $config['notifications']['webhooks']);
 
         $compiler = new \TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\RuleCompiler();
 

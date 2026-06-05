@@ -26,10 +26,41 @@ final class HttpResponseHeaderListenerTest extends TestCase
             {
                 return ['reason' => $this->reason, 'retry_after' => $this->retryAfter];
             }
-            public function save(?string $reason, ?int $retryAfter): void {}
+            public function save(
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+            ): void {}
             public function clear(): void {}
         };
         return new ActivationContext($storage);
+    }
+
+    private function makeConfig(bool $bypass = true, ?int $retryAfter = 300): BundleConfiguration
+    {
+        return new BundleConfiguration(
+            bypassAuthenticatedAdmins: $bypass,
+            defaultRetryAfter: $retryAfter,
+            publicStatusEnabled: false,
+            publicStatusToken: null,
+            autoInjectBanner: true,
+            defaultThresholdMinutes: 60,
+            urgencyOrangeMinutes: 30,
+            urgencyRedMinutes: 10,
+            dismissPersistence: 'session',
+            mailOnPreAnnounce: false,
+            mailOnMaintenanceStart: false,
+            mailOnMaintenanceEnd: false,
+            mailRecipients: [],
+            mailOnPreAnnounceRecipients: [],
+            mailOnMaintenanceStartRecipients: [],
+            mailOnMaintenanceEndRecipients: [],
+            mailTemplate: null,
+            notificationWebhooks: [],
+        );
     }
 
     private function makeEvent(Request $request, Response $response): ResponseEvent
@@ -46,7 +77,7 @@ final class HttpResponseHeaderListenerTest extends TestCase
     {
         $listener = new HttpResponseHeaderListener(
             $this->fakeContext(null, null),
-            new BundleConfiguration(true, 300),
+            $this->makeConfig(),
         );
         $request = Request::create('/');
         $request->attributes->set('_advanced_maintenance_active', true);
@@ -67,7 +98,7 @@ final class HttpResponseHeaderListenerTest extends TestCase
     {
         $listener = new HttpResponseHeaderListener(
             $this->fakeContext('migration', null),
-            new BundleConfiguration(true, 300),
+            $this->makeConfig(),
         );
         $request = Request::create('/');
         $request->attributes->set(
@@ -88,7 +119,7 @@ final class HttpResponseHeaderListenerTest extends TestCase
     {
         $listener = new HttpResponseHeaderListener(
             $this->fakeContext('migration', 600),
-            new BundleConfiguration(true, 300),
+            $this->makeConfig(),
         );
         $request = Request::create('/');
         $request->attributes->set('_advanced_maintenance_active', true);
@@ -105,7 +136,7 @@ final class HttpResponseHeaderListenerTest extends TestCase
     {
         $listener = new HttpResponseHeaderListener(
             $this->fakeContext(null, null),
-            new BundleConfiguration(true, 300),
+            $this->makeConfig(),
         );
         $request = Request::create('/');
         $request->attributes->set('_advanced_maintenance_active', true);
@@ -122,7 +153,7 @@ final class HttpResponseHeaderListenerTest extends TestCase
     {
         $listener = new HttpResponseHeaderListener(
             $this->fakeContext(null, null),
-            new BundleConfiguration(true, null),
+            $this->makeConfig(retryAfter: null),
         );
         $request = Request::create('/');
         $request->attributes->set('_advanced_maintenance_active', true);
@@ -138,7 +169,7 @@ final class HttpResponseHeaderListenerTest extends TestCase
     {
         $listener = new HttpResponseHeaderListener(
             $this->fakeContext('x', 60),
-            new BundleConfiguration(true, 300),
+            $this->makeConfig(),
         );
         $request = Request::create('/');
         $response = new Response('OK', 200);

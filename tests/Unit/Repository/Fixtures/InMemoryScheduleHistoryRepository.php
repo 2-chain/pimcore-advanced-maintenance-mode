@@ -28,10 +28,14 @@ final class InMemoryScheduleHistoryRepository implements ScheduleHistoryReposito
         return $id;
     }
 
-    #[\Override] public function updateEnd(int $historyId, \DateTimeImmutable $endedAt): void
+    #[\Override] public function updateEnd(int $historyId, \DateTimeImmutable $endedAt, ?string $endedReason = null): void
     {
         $this->updated[$historyId] = $endedAt;
     }
+
+    #[\Override] public function findInProgressIdByWindowId(string $windowId): ?int { return null; }
+
+    #[\Override] public function isInProgress(int $id): bool { return false; }
 
     #[\Override] public function findPaginated(int $page, int $pageSize, ?string $scheduleWindowId = null, ?\DateTimeImmutable $startedAfter = null, ?\DateTimeImmutable $startedBefore = null): array
     {

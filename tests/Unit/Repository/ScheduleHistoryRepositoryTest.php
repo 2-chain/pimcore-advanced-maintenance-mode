@@ -65,7 +65,7 @@ final class ScheduleHistoryRepositoryTest extends TestCase
 
     public function testUpdateEndThrowsWhenRecordNotFound(): void
     {
-        $this->em->method('find')->willReturn(null);
+        $this->em->expects($this->once())->method('find')->willReturn(null);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('No history record with id 99 found.');
@@ -75,10 +75,10 @@ final class ScheduleHistoryRepositoryTest extends TestCase
 
     public function testFindPaginatedBuildsQueryWithFilters(): void
     {
-        $query = $this->createMock(Query::class);
+        $query = $this->createStub(Query::class);
         $query->method('getResult')->willReturn([]);
 
-        $qb = $this->createMock(QueryBuilder::class);
+        $qb = $this->createStub(QueryBuilder::class);
         $qb->method('select')->willReturnSelf();
         $qb->method('from')->willReturnSelf();
         $qb->method('orderBy')->willReturnSelf();
@@ -88,7 +88,7 @@ final class ScheduleHistoryRepositoryTest extends TestCase
         $qb->method('setParameter')->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
-        $this->em->method('createQueryBuilder')->willReturn($qb);
+        $this->em->expects($this->once())->method('createQueryBuilder')->willReturn($qb);
 
         $result = $this->repo->findPaginated(1, 25, 'win-a');
         self::assertSame([], $result);
@@ -96,17 +96,17 @@ final class ScheduleHistoryRepositoryTest extends TestCase
 
     public function testCountReturnsScalarResult(): void
     {
-        $query = $this->createMock(Query::class);
+        $query = $this->createStub(Query::class);
         $query->method('getSingleScalarResult')->willReturn(7);
 
-        $qb = $this->createMock(QueryBuilder::class);
+        $qb = $this->createStub(QueryBuilder::class);
         $qb->method('select')->willReturnSelf();
         $qb->method('from')->willReturnSelf();
         $qb->method('andWhere')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
         $qb->method('getQuery')->willReturn($query);
 
-        $this->em->method('createQueryBuilder')->willReturn($qb);
+        $this->em->expects($this->once())->method('createQueryBuilder')->willReturn($qb);
 
         self::assertSame(7, $this->repo->count('win-x'));
     }

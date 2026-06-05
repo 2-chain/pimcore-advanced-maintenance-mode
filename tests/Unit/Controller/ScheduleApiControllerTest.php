@@ -88,7 +88,26 @@ final class ScheduleApiControllerTest extends TestCase
         bool $bypassAuthenticatedAdmins = false,
     ): ScheduleApiController {
         $helper = $this->createStub(MaintenanceModeHelperInterface::class);
-        $config = new BundleConfiguration(bypassAuthenticatedAdmins: $bypassAuthenticatedAdmins, defaultRetryAfter: null);
+        $config = new BundleConfiguration(
+            bypassAuthenticatedAdmins: $bypassAuthenticatedAdmins,
+            defaultRetryAfter: null,
+            publicStatusEnabled: false,
+            publicStatusToken: null,
+            autoInjectBanner: true,
+            defaultThresholdMinutes: 60,
+            urgencyOrangeMinutes: 30,
+            urgencyRedMinutes: 10,
+            dismissPersistence: 'session',
+            mailOnPreAnnounce: false,
+            mailOnMaintenanceStart: false,
+            mailOnMaintenanceEnd: false,
+            mailRecipients: [],
+            mailOnPreAnnounceRecipients: [],
+            mailOnMaintenanceStartRecipients: [],
+            mailOnMaintenanceEndRecipients: [],
+            mailTemplate: null,
+            notificationWebhooks: [],
+        );
         $scheduleStorage ??= $this->createStub(ScheduleStorage::class);
         $activationContext ??= $this->makeActivationContext();
         $overlapDetector ??= new OverlapDetector();

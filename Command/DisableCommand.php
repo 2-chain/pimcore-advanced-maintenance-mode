@@ -11,6 +11,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:disable',
@@ -21,6 +24,9 @@ final class DisableCommand extends Command
     public function __construct(
         private readonly MaintenanceModeHelperInterface $helper,
         private readonly ActivationContext $context,
+        private readonly MaintenanceMailNotifier $mailNotifier,
+        private readonly MaintenanceWebhookNotifier $webhookNotifier,
+        private readonly BundleConfiguration $config,
     ) {
         parent::__construct();
     }
@@ -38,6 +44,13 @@ final class DisableCommand extends Command
     {
         $this->helper->deactivate();
         $this->context->clear();
+
+        if ($this->config->mailOnMaintenanceEnd) {
+            $this->mailNotifier->notifyMaintenanceEnd('disable');
+        }
+        if ($this->config->notificationWebhooks !== []) {
+            $this->webhookNotifier->notifyMaintenanceEnd('disable');
+        }
 
         $output->writeln('<info>Maintenance mode disabled.</info>');
 

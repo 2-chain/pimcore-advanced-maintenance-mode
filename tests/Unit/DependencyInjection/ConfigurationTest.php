@@ -115,4 +115,39 @@ final class ConfigurationTest extends TestCase
 
         self::assertSame(['10.0.0.0/8', '192.168.1.42'], $config['exemptions']['ips']);
     }
+
+    public function testPreAnnounceDefaults(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), [[]]);
+
+        self::assertTrue($config['pre_announce']['auto_inject_banner']);
+        self::assertNull($config['pre_announce']['default_threshold_minutes']);
+        self::assertSame(30, $config['pre_announce']['urgency_orange_minutes']);
+        self::assertSame(10, $config['pre_announce']['urgency_red_minutes']);
+        self::assertSame('session', $config['pre_announce']['dismiss_persistence']);
+        self::assertSame([], $config['notifications']['webhooks']);
+    }
+
+    public function testMailDefaults(): void
+    {
+        $config = (new Processor())->processConfiguration(new Configuration(), [[]]);
+
+        self::assertFalse($config['mail']['on_pre_announce']);
+        self::assertFalse($config['mail']['on_maintenance_start']);
+        self::assertFalse($config['mail']['on_maintenance_end']);
+        self::assertNull($config['mail']['template']);
+        self::assertSame([], $config['mail']['recipients']);
+        self::assertSame([], $config['mail']['on_pre_announce_recipients']);
+        self::assertSame([], $config['mail']['on_maintenance_start_recipients']);
+        self::assertSame([], $config['mail']['on_maintenance_end_recipients']);
+    }
+
+    public function testDismissPersistenceRejectsInvalidValue(): void
+    {
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+
+        (new Processor())->processConfiguration(new Configuration(), [
+            ['pre_announce' => ['dismiss_persistence' => 'cookie']],
+        ]);
+    }
 }

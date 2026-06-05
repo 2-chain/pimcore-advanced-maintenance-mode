@@ -51,7 +51,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::once())->method('activate');
 
-        $storage = $this->createMock(ScheduleStorage::class);
+        $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([$this->activeOneTimeWindow('w1')]);
 
         $ctx   = new ActivationContext(new InMemoryContextStorageForTask());
@@ -70,7 +70,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $helper->method('isActive')->willReturn(true);
         $helper->expects(self::once())->method('deactivate');
 
-        $storage = $this->createMock(ScheduleStorage::class);
+        $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([]);
 
         $innerStorage = new InMemoryContextStorageForTask();
@@ -92,7 +92,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $helper->expects(self::never())->method('deactivate');
         $helper->expects(self::never())->method('activate');
 
-        $storage = $this->createMock(ScheduleStorage::class);
+        $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([$this->activeOneTimeWindow('w1')]);
 
         $ctx   = new ActivationContext(new InMemoryContextStorageForTask()); // windowId = null
@@ -111,7 +111,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::never())->method('activate');
 
-        $storage = $this->createMock(ScheduleStorage::class);
+        $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([]);
 
         $ctx   = new ActivationContext(new InMemoryContextStorageForTask());
@@ -124,7 +124,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
     /** GC: expired one-time windows are removed from storage */
     public function testGcRemovesExpiredWindows(): void
     {
-        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(false);
 
         $storage = $this->createMock(ScheduleStorage::class);
@@ -146,7 +146,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::once())->method('activate');
 
-        $storage = $this->createMock(ScheduleStorage::class);
+        $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([$this->activeOneTimeWindow('win-1')]);
 
         $innerStorage = new InMemoryContextStorageForTask();
@@ -170,7 +170,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::never())->method('activate');
 
-        $storage = $this->createMock(ScheduleStorage::class);
+        $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([$this->activeOneTimeWindow('win-skip')]);
 
         $ctx    = new ActivationContext(new InMemoryContextStorageForTask());
@@ -192,7 +192,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $helper->method('isActive')->willReturn(true);
         $helper->expects(self::once())->method('deactivate');
 
-        $storage = $this->createMock(ScheduleStorage::class);
+        $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([]);
 
         $innerStorage         = new InMemoryContextStorageForTask();

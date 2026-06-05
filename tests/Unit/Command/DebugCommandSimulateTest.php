@@ -25,13 +25,20 @@ final class DebugCommandSimulateTest extends TestCase
 {
     private function makeCommand(array $rules): DebugCommand
     {
-        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $storage = new class implements ContextStorageInterface {
             public function load(): array
             {
                 return ['reason' => null, 'retry_after' => null];
             }
-            public function save(?string $reason, ?int $retryAfter): void {}
+            public function save(
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+            ): void {}
             public function clear(): void {}
         };
         $evaluator = new ExemptionEvaluator(
@@ -43,7 +50,26 @@ final class DebugCommandSimulateTest extends TestCase
             helper: $helper,
             evaluator: $evaluator,
             context: new ActivationContext($storage),
-            config: new BundleConfiguration(true, 300),
+            config: new BundleConfiguration(
+                bypassAuthenticatedAdmins: true,
+                defaultRetryAfter: 300,
+                publicStatusEnabled: false,
+                publicStatusToken: null,
+                autoInjectBanner: true,
+                defaultThresholdMinutes: 60,
+                urgencyOrangeMinutes: 30,
+                urgencyRedMinutes: 10,
+                dismissPersistence: 'session',
+                mailOnPreAnnounce: false,
+                mailOnMaintenanceStart: false,
+                mailOnMaintenanceEnd: false,
+                mailRecipients: [],
+                mailOnPreAnnounceRecipients: [],
+                mailOnMaintenanceStartRecipients: [],
+                mailOnMaintenanceEndRecipients: [],
+                mailTemplate: null,
+                notificationWebhooks: [],
+            ),
             compiledRules: $rules,
         );
     }

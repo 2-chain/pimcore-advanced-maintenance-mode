@@ -35,10 +35,24 @@ services:
     # Value object built from container parameters.
     TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration:
         arguments:
-            $bypassAuthenticatedAdmins: '%two_chain_advanced_maintenance_mode.bypass_authenticated_admins%'
-            $defaultRetryAfter: '%two_chain_advanced_maintenance_mode.default_retry_after%'
-            $publicStatusEnabled: '%two_chain_advanced_maintenance_mode.public_status_enabled%'
-            $publicStatusToken: '%two_chain_advanced_maintenance_mode.public_status_token%'
+            $bypassAuthenticatedAdmins:              '%two_chain_advanced_maintenance_mode.bypass_authenticated_admins%'
+            $defaultRetryAfter:                      '%two_chain_advanced_maintenance_mode.default_retry_after%'
+            $publicStatusEnabled:                    '%two_chain_advanced_maintenance_mode.public_status_enabled%'
+            $publicStatusToken:                      '%two_chain_advanced_maintenance_mode.public_status_token%'
+            $autoInjectBanner:                       '%two_chain_advanced_maintenance_mode.auto_inject_banner%'
+            $defaultThresholdMinutes:                '%two_chain_advanced_maintenance_mode.default_threshold_minutes%'
+            $urgencyOrangeMinutes:                   '%two_chain_advanced_maintenance_mode.urgency_orange_minutes%'
+            $urgencyRedMinutes:                      '%two_chain_advanced_maintenance_mode.urgency_red_minutes%'
+            $dismissPersistence:                     '%two_chain_advanced_maintenance_mode.dismiss_persistence%'
+            $mailOnPreAnnounce:                      '%two_chain_advanced_maintenance_mode.mail_on_pre_announce%'
+            $mailOnMaintenanceStart:                 '%two_chain_advanced_maintenance_mode.mail_on_maintenance_start%'
+            $mailOnMaintenanceEnd:                   '%two_chain_advanced_maintenance_mode.mail_on_maintenance_end%'
+            $mailRecipients:                         '%two_chain_advanced_maintenance_mode.mail_recipients%'
+            $mailOnPreAnnounceRecipients:            '%two_chain_advanced_maintenance_mode.mail_on_pre_announce_recipients%'
+            $mailOnMaintenanceStartRecipients:       '%two_chain_advanced_maintenance_mode.mail_on_maintenance_start_recipients%'
+            $mailOnMaintenanceEndRecipients:         '%two_chain_advanced_maintenance_mode.mail_on_maintenance_end_recipients%'
+            $mailTemplate:                           '%two_chain_advanced_maintenance_mode.mail_template%'
+            $notificationWebhooks:                   '%two_chain_advanced_maintenance_mode.notification_webhooks%'
 
     # CompiledRulesProvider holds the SCALAR serialized rules in its argument.
     # The Extension and AttributeExemptionDiscoveryPass populate $rulesData.

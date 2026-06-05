@@ -228,7 +228,7 @@ class ScheduleApiController extends UserAwareController
             if ($overlaps !== []) {
                 return $this->json([
                     'overlapping' => array_map(static fn(ScheduleWindow $w) => $w->id, $overlaps),
-                ]);
+                ], Response::HTTP_CONFLICT);
             }
         }
 

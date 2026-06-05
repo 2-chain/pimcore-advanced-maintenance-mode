@@ -12,6 +12,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:enable',
@@ -22,6 +26,10 @@ final class EnableCommand extends Command
     public function __construct(
         private readonly MaintenanceModeHelperInterface $helper,
         private readonly ActivationContext $context,
+        private readonly PreAnnounceStorage $preAnnounceStorage,
+        private readonly MaintenanceMailNotifier $mailNotifier,
+        private readonly MaintenanceWebhookNotifier $webhookNotifier,
+        private readonly BundleConfiguration $config,
     ) {
         parent::__construct();
     }
@@ -64,6 +72,14 @@ final class EnableCommand extends Command
 
         $this->helper->activate($sessionId);
         $this->context->set($reason, $retryAfter);
+        $this->preAnnounceStorage->clear();
+
+        if ($this->config->mailOnMaintenanceStart) {
+            $this->mailNotifier->notifyMaintenanceStart($reason, $retryAfter, $sessionId);
+        }
+        if ($this->config->notificationWebhooks !== []) {
+            $this->webhookNotifier->notifyMaintenanceStart($reason, $retryAfter, $sessionId);
+        }
 
         $output->writeln('<info>Maintenance mode enabled.</info>');
         if ($reason !== null) {
