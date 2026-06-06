@@ -19,7 +19,7 @@ final class RuleCompilerBuiltinsTest extends TestCase
                 'commands' => [], 'routes' => [], 'ips' => [],
                 'messenger_workers' => false, 'scheduled_tasks' => false,
             ],
-            'builtin_exemptions' => $builtin,
+            'builtin_exemptions' => array_merge(['pimcore_maintenance' => false], $builtin),
         ];
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Repository;
 
 use PHPUnit\Framework\TestCase;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 
@@ -80,5 +81,85 @@ final class ScheduleStorageTest extends TestCase
         self::assertNotNull($found);
         self::assertSame(3, $found->createdByUserId);
         self::assertSame('editor', $found->createdByUsername);
+    }
+
+    public function testRoundTripWithScope(): void
+    {
+        $storage = $this->storage();
+        $scope   = new MaintenanceScope(['/shop', '/api'], [2]);
+        $window  = new ScheduleWindow(
+            'win-scope',
+            'UTC',
+            'Scoped maintenance',
+            new \DateTimeImmutable('2026-06-02T02:00:00Z'),
+            new \DateTimeImmutable('2026-06-02T04:00:00Z'),
+            null,
+            null,
+            0,
+            0,
+            '',
+            $scope,
+        );
+
+        $storage->add($window);
+        $found = $storage->findById('win-scope');
+
+        self::assertNotNull($found);
+        self::assertNotNull($found->scope);
+        self::assertSame(['/shop', '/api'], $found->scope->pathPrefixes);
+        self::assertSame([2], $found->scope->siteIds);
+    }
+
+    public function testRoundTripNullScope(): void
+    {
+        $storage = $this->storage();
+        $window  = new ScheduleWindow(
+            'win-no-scope',
+            'UTC',
+            'Global maintenance',
+            new \DateTimeImmutable('2026-06-02T02:00:00Z'),
+            new \DateTimeImmutable('2026-06-02T04:00:00Z'),
+            null,
+            null,
+        );
+
+        $storage->add($window);
+        $found = $storage->findById('win-no-scope');
+
+        self::assertNotNull($found);
+        self::assertNull($found->scope);
+    }
+
+    public function testLegacyPayloadWithoutScopeDeserializesToNull(): void
+    {
+        $storage = new class extends ScheduleStorage {
+            /** @var array<string, mixed> */
+            private array $store = [];
+
+            protected function tmpStoreGet(string $key): ?array { return $this->store[$key] ?? null; }
+            protected function tmpStoreSet(string $key, array $data): void { $this->store[$key] = $data; }
+            protected function tmpStoreAvailable(): bool { return true; }
+
+            public function seedRaw(string $key, array $data): void { $this->store[$key] = $data; }
+        };
+
+        // Inject a raw payload that has no 'scope' key (legacy format)
+        $storage->seedRaw('advanced_maintenance_schedule_windows', [[
+            'id'                      => 'win-legacy',
+            'timezone'                => 'UTC',
+            'reason'                  => 'Legacy',
+            'from'                    => '2026-06-02T02:00:00+00:00',
+            'to'                      => '2026-06-02T04:00:00+00:00',
+            'cron_expression'         => null,
+            'duration_minutes'        => null,
+            'announce_before_minutes' => 0,
+            'created_by_user_id'      => 0,
+            'created_by_username'     => '',
+        ]]);
+
+        $found = $storage->findById('win-legacy');
+
+        self::assertNotNull($found);
+        self::assertNull($found->scope);
     }
 }

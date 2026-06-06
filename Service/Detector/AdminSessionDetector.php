@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
+namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector;
 
 use Override;
 use Symfony\Component\HttpFoundation\Request;
 use Throwable;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\AdminSessionDetectorInterface;
 
 final class AdminSessionDetector implements AdminSessionDetectorInterface
 {

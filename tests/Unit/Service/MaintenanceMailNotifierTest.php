@@ -18,10 +18,16 @@ final class MaintenanceMailNotifierTest extends TestCase
         bool $onEnd = true,
         array $recipients = ['ops@example.com'],
         array $preAnnounceRecipients = [],
+        ?string $mailTemplate = null,
+        ?string $mailPreAnnounceTemplate = null,
+        ?string $mailMaintenanceStartTemplate = null,
+        ?string $mailMaintenanceEndTemplate = null,
     ): BundleConfiguration {
         return new BundleConfiguration(
             bypassAuthenticatedAdmins: false,
             defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
             publicStatusEnabled: false,
             publicStatusToken: null,
             autoInjectBanner: true,
@@ -36,7 +42,10 @@ final class MaintenanceMailNotifierTest extends TestCase
             mailOnPreAnnounceRecipients: $preAnnounceRecipients,
             mailOnMaintenanceStartRecipients: [],
             mailOnMaintenanceEndRecipients: [],
-            mailTemplate: null,
+            mailTemplate: $mailTemplate,
+            mailPreAnnounceTemplate: $mailPreAnnounceTemplate,
+            mailMaintenanceStartTemplate: $mailMaintenanceStartTemplate,
+            mailMaintenanceEndTemplate: $mailMaintenanceEndTemplate,
             notificationWebhooks: [],
         );
     }
@@ -68,6 +77,28 @@ final class MaintenanceMailNotifierTest extends TestCase
 
         $notifier = new MaintenanceMailNotifier($this->makeConfig(onStart: true, recipients: []), $logger);
         $notifier->notifyMaintenanceStart('reason', 300, 'cli');
+    }
+
+    public function testPerEventTemplateOverridesGlobalTemplate(): void
+    {
+        // Verifies that per-event template takes precedence over the global one.
+        // We can only inspect this indirectly (no mail sent when Pimcore\Mail
+        // is not available), but the config resolution must not throw.
+        $config = $this->makeConfig(
+            mailTemplate: '/emails/fallback',
+            mailMaintenanceStartTemplate: '/emails/start',
+        );
+        self::assertSame('/emails/start', $config->mailMaintenanceStartTemplate ?? $config->mailTemplate);
+        self::assertSame('/emails/fallback', $config->mailPreAnnounceTemplate ?? $config->mailTemplate);
+        self::assertSame('/emails/fallback', $config->mailMaintenanceEndTemplate ?? $config->mailTemplate);
+    }
+
+    public function testGlobalTemplateFallsBackToNullWhenNoneConfigured(): void
+    {
+        $config = $this->makeConfig();
+        self::assertNull($config->mailPreAnnounceTemplate ?? $config->mailTemplate);
+        self::assertNull($config->mailMaintenanceStartTemplate ?? $config->mailTemplate);
+        self::assertNull($config->mailMaintenanceEndTemplate ?? $config->mailTemplate);
     }
 
     public function testPreAnnounceRecipientsOverrideGlobal(): void

@@ -11,7 +11,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\IpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\CommandRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatcher;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider;
 
 final class ExemptionEvaluator
 {

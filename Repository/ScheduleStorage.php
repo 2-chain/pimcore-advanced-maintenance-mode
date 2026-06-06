@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
 use UnexpectedValueException;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 
 class ScheduleStorage
@@ -77,11 +78,27 @@ class ScheduleStorage
             'announce_before_minutes' => $w->announceBeforeMinutes,
             'created_by_user_id'      => $w->createdByUserId,
             'created_by_username'     => $w->createdByUsername,
+            'scope'                   => $w->scope !== null
+                ? ['path_prefixes' => $w->scope->pathPrefixes, 'site_ids' => $w->scope->siteIds]
+                : null,
         ];
     }
 
     private function hydrate(array $row): ScheduleWindow
     {
+        $scopeRaw = $row['scope'] ?? null;
+        $scope    = null;
+        if (\is_array($scopeRaw)
+            && isset($scopeRaw['path_prefixes'], $scopeRaw['site_ids'])
+            && \is_array($scopeRaw['path_prefixes'])
+            && \is_array($scopeRaw['site_ids'])
+        ) {
+            $scope = new MaintenanceScope(
+                \array_values(\array_filter($scopeRaw['path_prefixes'], 'is_string')),
+                \array_values(\array_filter($scopeRaw['site_ids'], 'is_int')),
+            );
+        }
+
         return new ScheduleWindow(
             id: $row['id'],
             timezone: $row['timezone'],
@@ -93,6 +110,7 @@ class ScheduleStorage
             announceBeforeMinutes: (int) ($row['announce_before_minutes'] ?? 0),
             createdByUserId:       (int) ($row['created_by_user_id'] ?? 0),
             createdByUsername:     (string) ($row['created_by_username'] ?? ''),
+            scope: $scope,
         );
     }
 

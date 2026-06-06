@@ -14,6 +14,7 @@ interface ContextStorageInterface
      *   expected_end_at: ?string,
      *   activated_by_health_check_failure: bool,
      *   activated_by_history_record_id: ?int,
+     *   scope?: ?array{path_prefixes: string[], site_ids: int[]},
      * }
      */
     public function load(): array;
@@ -28,4 +29,7 @@ interface ContextStorageInterface
     ): void;
 
     public function clear(): void;
+
+    /** @param ?array{path_prefixes: string[], site_ids: int[]} $scopeRaw */
+    public function saveScope(?array $scopeRaw): void;
 }

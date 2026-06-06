@@ -6,8 +6,8 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Service;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetector;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetectorInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\AdminSessionDetector;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\AdminSessionDetectorInterface;
 
 final class AdminSessionDetectorTest extends TestCase
 {

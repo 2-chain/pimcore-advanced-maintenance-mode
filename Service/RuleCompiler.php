@@ -133,10 +133,12 @@ final class RuleCompiler
     {
         $out = [];
 
-        // Always exempt the Pimcore maintenance runner. Without this, activating
+        // Exempt the Pimcore maintenance runner by default. Without this, activating
         // maintenance creates a deadlock: the task that auto-deactivates it can
         // never run because the command that invokes it is blocked by maintenance.
-        $out[] = new CommandRule('pimcore-maintenance', 'pimcore:maintenance', RuleSource::Builtin);
+        if ($builtins['pimcore_maintenance'] ?? true) {
+            $out[] = new CommandRule('pimcore-maintenance', 'pimcore:maintenance', RuleSource::Builtin);
+        }
 
         if ($builtins['bundle_own_commands'] === true) {
             $out[] = new CommandRule('bundle-own-commands', 'pimcore:advanced-maintenance:*', RuleSource::Builtin);

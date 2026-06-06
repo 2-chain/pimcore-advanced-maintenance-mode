@@ -10,8 +10,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerProvider;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\PreAnnounceBannerProvider;
 
 final class PreAnnounceBannerProviderTest extends TestCase
 {
@@ -20,6 +20,8 @@ final class PreAnnounceBannerProviderTest extends TestCase
         return new BundleConfiguration(
             bypassAuthenticatedAdmins: false,
             defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
             publicStatusEnabled: false,
             publicStatusToken: null,
             autoInjectBanner: true,
@@ -35,6 +37,9 @@ final class PreAnnounceBannerProviderTest extends TestCase
             mailOnMaintenanceStartRecipients: [],
             mailOnMaintenanceEndRecipients: [],
             mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
             notificationWebhooks: [],
         );
     }

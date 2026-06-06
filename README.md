@@ -5,7 +5,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/2-chain/pimcore-advanced-maintenance-mode/main.svg)](https://codecov.io/gh/2-chain/pimcore-advanced-maintenance-mode)
 [![License](https://img.shields.io/packagist/l/2chain/pimcore-advanced-maintenance-mode.svg)](LICENSE.md)
 
-Pimcore bundle that extends Pimcore's built-in maintenance mode with **rule-based exemptions** (HTTP routes, CLI commands, IP/CIDR, PHP attributes) and ergonomic improvements (`Retry-After` header, activation reason, admin-session bypass, debug command).
+Pimcore bundle that extends Pimcore's built-in maintenance mode with **rule-based exemptions** (HTTP routes, CLI commands, IP/CIDR, PHP attributes), ergonomic improvements (`Retry-After` header, activation reason, admin-session bypass, debug command), and a full set of operational features: scheduled windows, TTL safety net, pre-announce countdown banner, post-maintenance health checks, selective scope, and a Pimcore admin dashboard.
 
 |||
 |-|--|
@@ -15,6 +15,18 @@ Pimcore bundle that extends Pimcore's built-in maintenance mode with **rule-base
 | Pimcore | `^11.0 \|\| ^12.0` |
 | Symfony | `^6.4 \|\| ^7.0` |
 | License | [GPL-3.0-or-later](LICENSE.md) |
+
+## Features
+
+| Feature | Summary | Doc |
+|---------|---------|-----|
+| **Core exemptions** | Rule-based bypass for HTTP routes, CLI commands, and IPs. PHP attribute, YAML, and env-var sources merge additively. `Retry-After` + reason headers. Admin-session bypass. `debug` command. | [docs/features/core-exemptions.md](docs/features/core-exemptions.md) |
+| **Scheduled windows** | One-time and recurring cron-based windows enforced by a Pimcore maintenance task. Overlap detection, dry-run, queue on manual block. Public status endpoint. Self-test `doctor` command. | [docs/features/scheduled-windows.md](docs/features/scheduled-windows.md) |
+| **Heartbeat / TTL** | Attach a TTL to any manual activation — auto-deactivates on expiry. `heartbeat` command for deploy scripts. Pre-expiry WARNING log. | [docs/features/heartbeat-ttl.md](docs/features/heartbeat-ttl.md) |
+| **Pre-announce banner** | Live-countdown banner on every HTML page before maintenance starts. Colour-escalating, dismissible, zero template changes. Email and webhook notifications at every lifecycle event. | [docs/features/pre-announce-banner.md](docs/features/pre-announce-banner.md) |
+| **Admin dashboard** | Pimcore admin panel (Tools menu): upcoming schedule grid, execution history, status strip, exemptions panel, create/clone/delete/end-now, start-page portlet. | [docs/features/admin-dashboard.md](docs/features/admin-dashboard.md) |
+| **Health checks** | Post-deactivation checks (HTTP GET, DB ping, console command). Retries up to 3×; re-enters maintenance automatically on exhaustion. | [docs/features/health-checks.md](docs/features/health-checks.md) |
+| **Selective maintenance** | Scope maintenance to URL path prefixes and/or Pimcore site IDs. Out-of-scope requests pass through normally. | [docs/features/selective-maintenance.md](docs/features/selective-maintenance.md) |
 
 ## Why
 
@@ -169,10 +181,6 @@ For custom maintenance templates:
 {% endif %}
 ```
 
-## Roadmap
+## Further reading
 
-Tier 1 ergonomics are in v1. Phase 2 (separate spec / plan cycle):
-
-- Scheduled maintenance windows (`--from`, `--to`)
-- Heartbeat / TTL safety net (auto-deactivate on missing refresh)
-- Pre-announce countdown banner
+Each feature has a dedicated doc under [`docs/features/`](docs/features/) with full configuration reference, command examples, and integration notes.

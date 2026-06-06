@@ -7,10 +7,11 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Twig;
 use Override;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerProvider;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerRenderer;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\PreAnnounceBannerProvider;
 
 final class MaintenanceExtension extends AbstractExtension
 {
@@ -88,6 +89,20 @@ final class MaintenanceExtension extends AbstractExtension
             'urgencyLevel'     => $urgency,
             'dismissKey'       => 'amm_dismissed_' . $data->at->getTimestamp(),
             'dismissStorage'   => $this->config->dismissPersistence === 'local' ? 'local' : 'session',
+            'scope'            => $this->scopeToArray($this->context->getScope()),
+        ];
+    }
+
+    /** @return array{global: bool, pathPrefixes: string[], siteIds: int[]} */
+    private function scopeToArray(?MaintenanceScope $scope): array
+    {
+        if ($scope === null || $scope->isGlobal()) {
+            return ['global' => true, 'pathPrefixes' => [], 'siteIds' => []];
+        }
+        return [
+            'global'       => false,
+            'pathPrefixes' => $scope->pathPrefixes,
+            'siteIds'      => $scope->siteIds,
         ];
     }
 }

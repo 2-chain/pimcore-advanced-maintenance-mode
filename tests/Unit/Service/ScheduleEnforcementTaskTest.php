@@ -8,9 +8,11 @@ use PHPUnit\Framework\TestCase;
 use Pimcore\Tool\MaintenanceModeHelperInterface;
 use Psr\Log\NullLogger;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ActivationContext;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\QueuedWindowStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ScheduleEnforcementTask;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Repository\Fixtures\InMemoryScheduleHistoryRepository;
 
@@ -35,13 +37,44 @@ final class ScheduleEnforcementTaskTest extends TestCase
             null, null);
     }
 
+    private function makeConfig(?array $defaultScopeData = null): BundleConfiguration
+    {
+        return new BundleConfiguration(
+            bypassAuthenticatedAdmins: false,
+            defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
+            publicStatusEnabled: false,
+            publicStatusToken: null,
+            autoInjectBanner: false,
+            defaultThresholdMinutes: null,
+            urgencyOrangeMinutes: 30,
+            urgencyRedMinutes: 10,
+            dismissPersistence: 'session',
+            mailOnPreAnnounce: false,
+            mailOnMaintenanceStart: false,
+            mailOnMaintenanceEnd: false,
+            mailRecipients: [],
+            mailOnPreAnnounceRecipients: [],
+            mailOnMaintenanceStartRecipients: [],
+            mailOnMaintenanceEndRecipients: [],
+            mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
+            notificationWebhooks: [],
+            defaultScopeData: $defaultScopeData,
+        );
+    }
+
     private function makeTask(
         MaintenanceModeHelperInterface $helper,
         ActivationContext $ctx,
         ScheduleStorage $storage,
         QueuedWindowStorageInterface $queue,
+        ?BundleConfiguration $config = null,
     ): ScheduleEnforcementTask {
-        return new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), new InMemoryScheduleHistoryRepository(), new InMemorySkipStorage());
+        return new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), new InMemoryScheduleHistoryRepository(), new InMemorySkipStorage(), $config ?? $this->makeConfig());
     }
 
     /** Case A: window active, mode OFF → activate */
@@ -155,7 +188,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $repo         = new InMemoryScheduleHistoryRepository();
         $skip         = new InMemorySkipStorage();
 
-        $task = new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), $repo, $skip);
+        $task = new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), $repo, $skip, $this->makeConfig());
         $task->executeAtTime($now);
 
         self::assertSame(1, $repo->insertCount());
@@ -179,7 +212,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $skip   = new InMemorySkipStorage();
         $skip->skip('win-skip', $now->modify('+10 minutes'));
 
-        $task = new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), $repo, $skip);
+        $task = new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), $repo, $skip, $this->makeConfig());
         $task->executeAtTime($now);
 
         self::assertSame(0, $repo->insertCount());
@@ -205,10 +238,78 @@ final class ScheduleEnforcementTaskTest extends TestCase
         $skip  = new InMemorySkipStorage();
         $queue = new InMemoryQueuedWindowStorage();
 
-        $task = new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), $repo, $skip);
+        $task = new ScheduleEnforcementTask($helper, $ctx, $storage, $queue, new NullLogger(), $repo, $skip, $this->makeConfig());
         $task->executeAtTime($now);
 
         self::assertTrue($repo->wasEndUpdated(5));
+    }
+
+    public function testCaseAScopedWindowStoresScopeInContext(): void
+    {
+        $now    = new \DateTimeImmutable('2026-06-02T12:00:00Z', new \DateTimeZone('UTC'));
+        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper->method('isActive')->willReturn(false);
+        $helper->expects(self::once())->method('activate');
+
+        $scope  = new MaintenanceScope(['/shop'], [2]);
+        $window = new ScheduleWindow(
+            'w-scoped', 'UTC', 'deploy',
+            $this->utc('2026-06-02T00:00:00Z'), $this->utc('2026-06-02T23:59:59Z'),
+            null, null, 0, 0, '', $scope,
+        );
+
+        $storage = $this->createStub(ScheduleStorage::class);
+        $storage->method('findAll')->willReturn([$window]);
+
+        $innerStorage = new InMemoryContextStorageForTask();
+        $ctx          = new ActivationContext($innerStorage);
+        $queue        = new InMemoryQueuedWindowStorage();
+
+        $task = $this->makeTask($helper, $ctx, $storage, $queue);
+        $task->executeAtTime($now);
+
+        self::assertSame(['/shop'], $innerStorage->scopeRaw['path_prefixes'] ?? null);
+    }
+
+    public function testCaseANullWindowScopeUsesYamlDefault(): void
+    {
+        $now    = new \DateTimeImmutable('2026-06-02T12:00:00Z', new \DateTimeZone('UTC'));
+        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper->method('isActive')->willReturn(false);
+        $helper->expects(self::once())->method('activate');
+
+        $storage = $this->createStub(ScheduleStorage::class);
+        $storage->method('findAll')->willReturn([$this->activeOneTimeWindow('w-default')]);
+
+        $innerStorage = new InMemoryContextStorageForTask();
+        $ctx          = new ActivationContext($innerStorage);
+        $queue        = new InMemoryQueuedWindowStorage();
+        $config       = $this->makeConfig(['path_prefixes' => ['/checkout'], 'site_ids' => []]);
+
+        $task = $this->makeTask($helper, $ctx, $storage, $queue, $config);
+        $task->executeAtTime($now);
+
+        self::assertSame(['/checkout'], $innerStorage->scopeRaw['path_prefixes'] ?? null);
+    }
+
+    public function testCaseANullWindowScopeNoYamlDefaultStoresNullScope(): void
+    {
+        $now    = new \DateTimeImmutable('2026-06-02T12:00:00Z', new \DateTimeZone('UTC'));
+        $helper = $this->createMock(MaintenanceModeHelperInterface::class);
+        $helper->method('isActive')->willReturn(false);
+        $helper->expects(self::once())->method('activate');
+
+        $storage = $this->createStub(ScheduleStorage::class);
+        $storage->method('findAll')->willReturn([$this->activeOneTimeWindow('w-no-scope')]);
+
+        $innerStorage = new InMemoryContextStorageForTask();
+        $ctx          = new ActivationContext($innerStorage);
+        $queue        = new InMemoryQueuedWindowStorage();
+
+        $task = $this->makeTask($helper, $ctx, $storage, $queue, $this->makeConfig(null));
+        $task->executeAtTime($now);
+
+        self::assertNull($innerStorage->scopeRaw);
     }
 }
 
@@ -217,6 +318,7 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
 {
     public ?string $windowId = null;
     public ?int $historyRecordId = null;
+    public ?array $scopeRaw = null;
 
     #[\Override]
     public function load(): array
@@ -228,6 +330,7 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
             'expected_end_at'                    => null,
             'activated_by_health_check_failure'  => false,
             'activated_by_history_record_id'     => $this->historyRecordId,
+            'scope'                              => $this->scopeRaw,
         ];
     }
 
@@ -243,6 +346,13 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
     {
         $this->windowId = null;
         $this->historyRecordId = null;
+        $this->scopeRaw = null;
+    }
+
+    #[\Override]
+    public function saveScope(?array $scopeRaw): void
+    {
+        $this->scopeRaw = $scopeRaw;
     }
 }
 

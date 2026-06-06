@@ -6,6 +6,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
 
 final class ActivationContext
@@ -76,6 +77,26 @@ final class ActivationContext
             activatedByHealthCheckFailure: $data['activated_by_health_check_failure'],
             activatedByHistoryRecordId: $id,
         );
+    }
+
+    public function getScope(): ?MaintenanceScope
+    {
+        $raw = $this->payload()['scope'] ?? null;
+        if (!\is_array($raw) || !isset($raw['path_prefixes'], $raw['site_ids'])) {
+            return null;
+        }
+        return new MaintenanceScope(
+            \array_values(\array_filter((array) $raw['path_prefixes'], 'is_string')),
+            \array_values(\array_filter(\array_map('intval', (array) $raw['site_ids']), static fn(int $v): bool => $v > 0)),
+        );
+    }
+
+    public function setScope(?MaintenanceScope $scope): void
+    {
+        $raw = $scope !== null
+            ? ['path_prefixes' => $scope->pathPrefixes, 'site_ids' => $scope->siteIds]
+            : null;
+        $this->storage->saveScope($raw);
     }
 
     public function clear(): void

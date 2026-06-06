@@ -21,6 +21,7 @@ class MaintenanceMailNotifier
         $recipients = $this->config->mailOnPreAnnounceRecipients !== []
             ? $this->config->mailOnPreAnnounceRecipients
             : $this->config->mailRecipients;
+        $template = $this->config->mailPreAnnounceTemplate ?? $this->config->mailTemplate;
 
         $subject = 'Maintenance pre-announcement: ' . $data->at->format('Y-m-d H:i') . ' UTC';
         $body = \sprintf(
@@ -29,7 +30,7 @@ class MaintenanceMailNotifier
             $data->timezone,
             $data->reason ?? '(not specified)',
         );
-        $this->send($recipients, $subject, $body);
+        $this->send($recipients, $subject, $body, $template);
     }
 
     public function notifyMaintenanceStart(?string $reason, ?int $retryAfter, ?string $activatedBy): void
@@ -40,6 +41,7 @@ class MaintenanceMailNotifier
         $recipients = $this->config->mailOnMaintenanceStartRecipients !== []
             ? $this->config->mailOnMaintenanceStartRecipients
             : $this->config->mailRecipients;
+        $template = $this->config->mailMaintenanceStartTemplate ?? $this->config->mailTemplate;
 
         $subject = 'Maintenance mode ENABLED';
         $body = \sprintf(
@@ -48,7 +50,7 @@ class MaintenanceMailNotifier
             $retryAfter !== null ? $retryAfter . 's' : '(default)',
             $activatedBy ?? '(unknown)',
         );
-        $this->send($recipients, $subject, $body);
+        $this->send($recipients, $subject, $body, $template);
     }
 
     public function notifyMaintenanceEnd(string $trigger): void
@@ -59,6 +61,7 @@ class MaintenanceMailNotifier
         $recipients = $this->config->mailOnMaintenanceEndRecipients !== []
             ? $this->config->mailOnMaintenanceEndRecipients
             : $this->config->mailRecipients;
+        $template = $this->config->mailMaintenanceEndTemplate ?? $this->config->mailTemplate;
 
         $subject = 'Maintenance mode DISABLED';
         $body = \sprintf(
@@ -66,11 +69,11 @@ class MaintenanceMailNotifier
             $trigger,
             (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s'),
         );
-        $this->send($recipients, $subject, $body);
+        $this->send($recipients, $subject, $body, $template);
     }
 
     /** @param list<string> $recipients */
-    private function send(array $recipients, string $subject, string $body): void
+    private function send(array $recipients, string $subject, string $body, ?string $template = null): void
     {
         if ($recipients === []) {
             $this->logger->debug('[MaintenanceMailNotifier] No recipients configured — skipping notification.', [
@@ -88,8 +91,12 @@ class MaintenanceMailNotifier
 
         try {
             $mail = new \Pimcore\Mail();
-            $mail->subject($subject);
-            $mail->text($body);
+            if ($template !== null) {
+                $mail->setDocument($template);
+            } else {
+                $mail->subject($subject);
+                $mail->text($body);
+            }
             foreach ($recipients as $recipient) {
                 $mail->addTo($recipient);
             }

@@ -23,6 +23,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Dto\NextWindowDto;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Dto\ScheduleWindowDto;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Entity\ScheduleHistoryRecord;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ActivationContext;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\QueuedWindowStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ScheduleHistoryRepositoryInterface;
@@ -32,8 +33,10 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\CommandRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\IpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\OverlapDetector;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\OverlapDetector;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PendingHealthCheckStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider;
 
 class ScheduleApiController extends UserAwareController
 {
@@ -49,6 +52,8 @@ class ScheduleApiController extends UserAwareController
         private readonly SkipStorage $skipStorage,
         private readonly QueuedWindowStorageInterface $queuedWindowStorage,
         private readonly CompiledRulesProvider $rulesProvider,
+        private readonly PreAnnounceStorage $preAnnounceStorage,
+        private readonly ?PendingHealthCheckStorage $pendingStorage = null,
     ) {}
 
     protected function isAllowedToManage(): bool
@@ -100,7 +105,9 @@ class ScheduleApiController extends UserAwareController
                 nextFires:             $nextFires,
             );
 
-            return $dto->toArray();
+            $row = $dto->toArray();
+            $row['scope'] = $this->scopeToArray($w->scope);
+            return $row;
         }, $windows);
 
         $activationDto = new ActivationContextDto(
@@ -110,9 +117,20 @@ class ScheduleApiController extends UserAwareController
             expectedEndAt:               $this->activationContext->getExpectedEndAt()?->format(DateTimeInterface::ATOM),
         );
 
+        $manual = $this->preAnnounceStorage->load();
+        $preAnnounce = ($manual !== null && $manual->at > $now)
+            ? [
+                'at'                   => $manual->at->format(DateTimeInterface::ATOM),
+                'timezone'             => $manual->timezone,
+                'reason'               => $manual->reason,
+                'announceBeforeMinutes' => $manual->announceBeforeMinutes,
+            ]
+            : null;
+
         return $this->json([
             'windows'           => $rows,
             'currentActivation' => $activationDto->toArray(),
+            'preAnnounce'       => $preAnnounce,
         ]);
     }
 
@@ -155,6 +173,7 @@ class ScheduleApiController extends UserAwareController
             'preAnnounce'    => false,
             'preAnnounceAt'  => null,
             'nextWindow'     => $nextWindowDto?->toArray(),
+            'scope'          => $this->scopeToArray($this->activationContext->getScope()),
         ]);
     }
 
@@ -202,6 +221,12 @@ class ScheduleApiController extends UserAwareController
         $announceBeforeMinutes = (int) ($body['announceBeforeMinutes'] ?? 0);
         $forceCreate           = (bool) ($body['forceCreate'] ?? false);
 
+        $pathPrefixes = \array_values(\array_filter($body['pathPrefixes'] ?? [], 'is_string'));
+        $siteIds      = \array_values(\array_map('intval', \array_filter($body['siteIds'] ?? [], 'is_numeric')));
+        $scope        = (!empty($pathPrefixes) || !empty($siteIds))
+            ? new MaintenanceScope($pathPrefixes, $siteIds)
+            : null;
+
         $pimcoreUser       = $this->getPimcoreUser();
         $createdByUserId   = (int) ($pimcoreUser?->getId() ?? 0);
         $createdByUsername = (string) ($pimcoreUser?->getName() ?? '');
@@ -218,6 +243,7 @@ class ScheduleApiController extends UserAwareController
                 announceBeforeMinutes: $announceBeforeMinutes,
                 createdByUserId: $createdByUserId,
                 createdByUsername: $createdByUsername,
+                scope: $scope,
             );
         } catch (InvalidArgumentException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -277,6 +303,7 @@ class ScheduleApiController extends UserAwareController
         $historyId = $this->activationContext->getActivatedByHistoryRecordId();
 
         $this->helper->deactivate();
+        $this->pendingStorage?->write('end_now');
         $this->activationContext->clear();
 
         if ($historyId !== null) {
@@ -378,5 +405,18 @@ class ScheduleApiController extends UserAwareController
             $desc .= ($desc !== '' ? ' ' : '') . '[' . implode(',', $rule->methods) . ']';
         }
         return $desc;
+    }
+
+    /** @return array{global: bool, pathPrefixes: string[], siteIds: int[]} */
+    private function scopeToArray(?MaintenanceScope $scope): array
+    {
+        if ($scope === null || $scope->isGlobal()) {
+            return ['global' => true, 'pathPrefixes' => [], 'siteIds' => []];
+        }
+        return [
+            'global'       => false,
+            'pathPrefixes' => $scope->pathPrefixes,
+            'siteIds'      => $scope->siteIds,
+        ];
     }
 }

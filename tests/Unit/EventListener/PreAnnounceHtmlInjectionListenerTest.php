@@ -11,9 +11,9 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\EventListener\PreAnnounceHtmlInjectionListener;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerProvider;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerRenderer;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\PreAnnounceBannerProvider;
 
 final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 {
@@ -22,6 +22,8 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
         return new BundleConfiguration(
             bypassAuthenticatedAdmins: false,
             defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
             publicStatusEnabled: false,
             publicStatusToken: null,
             autoInjectBanner: $autoInject,
@@ -37,6 +39,9 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
             mailOnMaintenanceStartRecipients: [],
             mailOnMaintenanceEndRecipients: [],
             mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
             notificationWebhooks: [],
         );
     }

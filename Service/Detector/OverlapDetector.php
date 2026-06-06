@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
+namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector;
 
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 

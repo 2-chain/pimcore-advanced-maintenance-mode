@@ -17,8 +17,9 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\IpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:debug',
@@ -35,6 +36,7 @@ final class DebugCommand extends Command
         private readonly ActivationContext $context,
         private readonly BundleConfiguration $config,
         private readonly array $compiledRules,
+        private readonly PreAnnounceStorage $preAnnounceStorage,
     ) {
         parent::__construct();
     }
@@ -45,6 +47,7 @@ final class DebugCommand extends Command
         ActivationContext $context,
         BundleConfiguration $config,
         CompiledRulesProvider $rulesProvider,
+        PreAnnounceStorage $preAnnounceStorage,
     ): self {
         return new self(
             helper: $helper,
@@ -52,6 +55,7 @@ final class DebugCommand extends Command
             context: $context,
             config: $config,
             compiledRules: $rulesProvider->getRules(),
+            preAnnounceStorage: $preAnnounceStorage,
         );
     }
 
@@ -98,11 +102,55 @@ final class DebugCommand extends Command
             if ($reason !== null) {
                 $output->writeln(\sprintf('Activation reason:     %s', $reason));
             }
+
+            // TTL line: only for manual (non-schedule) activations
+            if ($this->context->getActivatedByScheduleWindowId() === null) {
+                $expiresAt = $this->context->getExpiresAt();
+                if ($expiresAt === null) {
+                    $output->writeln('TTL:         not set (indefinite)');
+                } else {
+                    $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+                    $secondsRemaining = $expiresAt->getTimestamp() - $now->getTimestamp();
+                    $minutesRemaining = (int) \ceil($secondsRemaining / 60);
+                    $output->writeln(\sprintf(
+                        'TTL:         %d min remaining (expires at %s)',
+                        \max(0, $minutesRemaining),
+                        $expiresAt->format('Y-m-d H:i:s \U\T\C'),
+                    ));
+                }
+            }
         }
 
         $retry = $this->context->getRetryAfter() ?? $this->config->defaultRetryAfter;
         $output->writeln(\sprintf('Default Retry-After:   %s', $retry === null ? '(none)' : $retry . 's'));
         $output->writeln(\sprintf('Admin bypass enabled:  %s', $this->config->bypassAuthenticatedAdmins ? 'yes' : 'no'));
+        $output->writeln('');
+
+        $this->printPreAnnounce($output);
+    }
+
+    private function printPreAnnounce(OutputInterface $output): void
+    {
+        $now  = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $data = $this->preAnnounceStorage->load();
+
+        if ($data === null || $data->at <= $now) {
+            $output->writeln('Pre-announcement:      (none)');
+        } else {
+            $label = $data->at->format('Y-m-d H:i:s') . ' UTC';
+            if ($data->reason !== null) {
+                $label .= ' — ' . $data->reason;
+            }
+            $output->writeln('Pre-announcement:      ' . $label);
+            if ($data->announceBeforeMinutes !== null) {
+                $from = $data->at->modify('-' . $data->announceBeforeMinutes . ' minutes');
+                $output->writeln(\sprintf(
+                    'Banner visible from:   %s UTC (%d min before)',
+                    $from->format('Y-m-d H:i:s'),
+                    $data->announceBeforeMinutes,
+                ));
+            }
+        }
         $output->writeln('');
     }
 

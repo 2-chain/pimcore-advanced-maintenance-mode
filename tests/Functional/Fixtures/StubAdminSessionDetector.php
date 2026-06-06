@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures;
 
 use Symfony\Component\HttpFoundation\Request;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetectorInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\AdminSessionDetectorInterface;
 
 final class StubAdminSessionDetector implements AdminSessionDetectorInterface
 {

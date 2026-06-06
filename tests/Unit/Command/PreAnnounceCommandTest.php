@@ -6,6 +6,8 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Command;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\PreAnnounceCommand;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 
@@ -21,10 +23,19 @@ final class PreAnnounceCommandTest extends TestCase
         };
     }
 
+    private function makeCommand(PreAnnounceStorage $storage, ?MaintenanceMailNotifier $mail = null, ?MaintenanceWebhookNotifier $webhook = null): PreAnnounceCommand
+    {
+        return new PreAnnounceCommand(
+            $storage,
+            $mail ?? $this->createStub(MaintenanceMailNotifier::class),
+            $webhook ?? $this->createStub(MaintenanceWebhookNotifier::class),
+        );
+    }
+
     public function testSetsPreAnnouncement(): void
     {
         $storage = $this->makeStorage();
-        $tester = new CommandTester(new PreAnnounceCommand($storage));
+        $tester = new CommandTester($this->makeCommand($storage));
 
         $future = (new \DateTimeImmutable('+2 hours'))->format('Y-m-d H:i:s');
         $tester->execute(['--at' => $future, '--reason' => 'DB migration', '--timezone' => 'UTC']);
@@ -35,10 +46,27 @@ final class PreAnnounceCommandTest extends TestCase
         self::assertStringContainsString('Pre-announcement set', $tester->getDisplay());
     }
 
+    public function testNotifiersCalledOnSuccess(): void
+    {
+        $storage = $this->makeStorage();
+
+        $mail = $this->createMock(MaintenanceMailNotifier::class);
+        $mail->expects($this->once())->method('notifyPreAnnounce');
+
+        $webhook = $this->createMock(MaintenanceWebhookNotifier::class);
+        $webhook->expects($this->once())->method('notifyPreAnnounce');
+
+        $future = (new \DateTimeImmutable('+2 hours'))->format('Y-m-d H:i:s');
+        $tester = new CommandTester($this->makeCommand($storage, $mail, $webhook));
+        $tester->execute(['--at' => $future, '--timezone' => 'UTC']);
+
+        $tester->assertCommandIsSuccessful();
+    }
+
     public function testFailsWhenAtIsInPast(): void
     {
         $storage = $this->makeStorage();
-        $tester = new CommandTester(new PreAnnounceCommand($storage));
+        $tester = new CommandTester($this->makeCommand($storage));
 
         $past = (new \DateTimeImmutable('-2 hours'))->format('Y-m-d H:i:s');
         $result = $tester->execute(['--at' => $past, '--timezone' => 'UTC']);
@@ -50,7 +78,7 @@ final class PreAnnounceCommandTest extends TestCase
     public function testFailsWithInvalidTimezone(): void
     {
         $storage = $this->makeStorage();
-        $tester = new CommandTester(new PreAnnounceCommand($storage));
+        $tester = new CommandTester($this->makeCommand($storage));
 
         $future = (new \DateTimeImmutable('+2 hours'))->format('Y-m-d H:i:s');
         $result = $tester->execute(['--at' => $future, '--timezone' => 'Not/ATimezone']);
@@ -62,7 +90,7 @@ final class PreAnnounceCommandTest extends TestCase
     public function testFailsWithNegativeAnnounceBefore(): void
     {
         $storage = $this->makeStorage();
-        $tester = new CommandTester(new PreAnnounceCommand($storage));
+        $tester = new CommandTester($this->makeCommand($storage));
 
         $future = (new \DateTimeImmutable('+2 hours'))->format('Y-m-d H:i:s');
         $result = $tester->execute(['--at' => $future, '--timezone' => 'UTC', '--announce-before' => '-5']);

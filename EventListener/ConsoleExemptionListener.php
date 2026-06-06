@@ -72,6 +72,21 @@ final class ConsoleExemptionListener implements EventSubscriberInterface
         if ($reason !== null) {
             $out->writeln(\sprintf('<comment>[maintenance]</comment> Reason: %s', $reason));
         }
+
+        // TTL expiry line: only for manual activations with a TTL set
+        if (
+            $this->context->getActivatedByScheduleWindowId() === null
+            && ($expiresAt = $this->context->getExpiresAt()) !== null
+        ) {
+            $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+            $secondsRemaining = $expiresAt->getTimestamp() - $now->getTimestamp();
+            $minutesRemaining = (int) \ceil($secondsRemaining / 60);
+            $out->writeln(\sprintf(
+                '<comment>[maintenance]</comment> Expires in: %d min (at %s)',
+                \max(0, $minutesRemaining),
+                $expiresAt->format('Y-m-d H:i:s \U\T\C'),
+            ));
+        }
     }
 
     private function buildBlockedMessage(?string $reason): string

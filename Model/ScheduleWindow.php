@@ -22,6 +22,7 @@ final readonly class ScheduleWindow
         public int $announceBeforeMinutes = 0,
         public int $createdByUserId = 0,
         public string $createdByUsername = '',
+        public ?MaintenanceScope $scope = null,
     ) {
         $hasOneTime = ($from !== null && $to !== null);
         $hasRecurring = ($cronExpression !== null && $durationMinutes !== null);

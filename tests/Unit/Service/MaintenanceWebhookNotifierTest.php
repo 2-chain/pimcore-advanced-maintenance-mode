@@ -17,6 +17,8 @@ final class MaintenanceWebhookNotifierTest extends TestCase
         return new BundleConfiguration(
             bypassAuthenticatedAdmins: false,
             defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
             publicStatusEnabled: false,
             publicStatusToken: null,
             autoInjectBanner: true,
@@ -32,6 +34,9 @@ final class MaintenanceWebhookNotifierTest extends TestCase
             mailOnMaintenanceStartRecipients: [],
             mailOnMaintenanceEndRecipients: [],
             mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
             notificationWebhooks: $webhooks,
         );
     }

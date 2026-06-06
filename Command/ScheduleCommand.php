@@ -12,9 +12,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\OverlapDetector;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\OverlapDetector;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:schedule',
@@ -39,8 +40,11 @@ final class ScheduleCommand extends Command
             ->addOption('duration', null, InputOption::VALUE_REQUIRED, 'Duration in minutes for recurring window')
             ->addOption('reason',   null, InputOption::VALUE_REQUIRED, 'Human-readable reason shown during maintenance')
             ->addOption('timezone', null, InputOption::VALUE_REQUIRED, 'PHP timezone identifier', \ini_get('date.timezone') ?: 'UTC')
+            ->addOption('announce-before', null, InputOption::VALUE_REQUIRED, 'Minutes before start to show pre-announce banner (0 = use config default)', 0)
             ->addOption('id',       null, InputOption::VALUE_REQUIRED, 'Window ID (auto-generated if omitted)')
-            ->addOption('dry-run',  null, InputOption::VALUE_NONE,     'Validate and show what would be scheduled without persisting');
+            ->addOption('dry-run',  null, InputOption::VALUE_NONE,     'Validate and show what would be scheduled without persisting')
+            ->addOption('path-prefix', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict this window to URL path prefix (repeatable)')
+            ->addOption('site-id',     null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict this window to Pimcore site ID (repeatable)');
     }
 
     #[Override]
@@ -70,10 +74,20 @@ final class ScheduleCommand extends Command
             return Command::FAILURE;
         }
 
-        $timezone = (string) ($input->getOption('timezone') ?? 'UTC');
-        $reason   = $input->getOption('reason');
-        $reason   = \is_string($reason) && $reason !== '' ? $reason : null;
-        $id       = $input->getOption('id') ?? \bin2hex(\random_bytes(8));
+        $timezone            = (string) ($input->getOption('timezone') ?? 'UTC');
+        $reason              = $input->getOption('reason');
+        $reason              = \is_string($reason) && $reason !== '' ? $reason : null;
+        $id                  = $input->getOption('id') ?? \bin2hex(\random_bytes(8));
+        $announceBeforeRaw   = $input->getOption('announce-before');
+        $announceBeforeMinutes = \is_numeric($announceBeforeRaw) ? (int) $announceBeforeRaw : 0;
+
+        // Scope resolution
+        $pathPrefixes  = (array) $input->getOption('path-prefix');
+        $siteIdStrings = (array) $input->getOption('site-id');
+        $siteIds       = \array_map('intval', \array_filter($siteIdStrings, static fn($v) => $v !== '' && $v !== null));
+        $scope = (!empty($pathPrefixes) || !empty($siteIds))
+            ? new MaintenanceScope($pathPrefixes, $siteIds)
+            : null;
 
         try {
             $window = new ScheduleWindow(
@@ -84,6 +98,8 @@ final class ScheduleCommand extends Command
                 to: $hasOneTime ? new \DateTimeImmutable((string) $to) : null,
                 cronExpression: $hasRecurring ? (string) $cron : null,
                 durationMinutes: $hasRecurring ? (int) $duration : null,
+                announceBeforeMinutes: $announceBeforeMinutes,
+                scope: $scope,
             );
         } catch (\Exception $e) {
             $io->error('Invalid window parameters: ' . $e->getMessage());
@@ -112,6 +128,10 @@ final class ScheduleCommand extends Command
                     return Command::SUCCESS;
                 }
             }
+        }
+
+        if ($scope !== null) {
+            $output->writeln('<comment>Note: overlap check does not consider scope — windows with non-overlapping scopes may still be flagged.</comment>');
         }
 
         if ($dry) {

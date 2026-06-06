@@ -9,6 +9,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 
@@ -18,8 +20,11 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 )]
 final class PreAnnounceCommand extends Command
 {
-    public function __construct(private readonly PreAnnounceStorage $storage)
-    {
+    public function __construct(
+        private readonly PreAnnounceStorage $storage,
+        private readonly MaintenanceMailNotifier $mailNotifier,
+        private readonly MaintenanceWebhookNotifier $webhookNotifier,
+    ) {
         parent::__construct();
     }
 
@@ -93,6 +98,8 @@ final class PreAnnounceCommand extends Command
             announceBeforeMinutes: $announceMinutes,
         );
         $this->storage->save($data);
+        $this->mailNotifier->notifyPreAnnounce($data);
+        $this->webhookNotifier->notifyPreAnnounce($data);
 
         $bannerFrom = $announceMinutes !== null
             ? $atUtc->modify('-' . $announceMinutes . ' minutes')

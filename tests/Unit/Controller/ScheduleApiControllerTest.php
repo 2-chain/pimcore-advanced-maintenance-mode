@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Controller\ScheduleApiController;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ActivationContext;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\QueuedWindowStorageInterface;
@@ -21,8 +22,10 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\IpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\OverlapDetector;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\OverlapDetector;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider;
 
 final class ScheduleApiControllerTest extends TestCase
 {
@@ -71,6 +74,9 @@ final class ScheduleApiControllerTest extends TestCase
             {
                 $this->windowId = null;
             }
+
+            #[\Override]
+            public function saveScope(?array $scopeRaw): void {}
         };
 
         return new ActivationContext($storage);
@@ -86,11 +92,14 @@ final class ScheduleApiControllerTest extends TestCase
         ?QueuedWindowStorageInterface $queuedWindowStorage = null,
         ?CompiledRulesProvider $rulesProvider = null,
         bool $bypassAuthenticatedAdmins = false,
+        ?PreAnnounceStorage $preAnnounceStorage = null,
     ): ScheduleApiController {
         $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $config = new BundleConfiguration(
             bypassAuthenticatedAdmins: $bypassAuthenticatedAdmins,
             defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
             publicStatusEnabled: false,
             publicStatusToken: null,
             autoInjectBanner: true,
@@ -106,6 +115,9 @@ final class ScheduleApiControllerTest extends TestCase
             mailOnMaintenanceStartRecipients: [],
             mailOnMaintenanceEndRecipients: [],
             mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
             notificationWebhooks: [],
         );
         $scheduleStorage ??= $this->createStub(ScheduleStorage::class);
@@ -115,6 +127,9 @@ final class ScheduleApiControllerTest extends TestCase
         $skipStorage ??= $this->createStub(SkipStorage::class);
         $queuedWindowStorage ??= $this->createStub(QueuedWindowStorageInterface::class);
         $rulesProvider ??= new CompiledRulesProvider([]);
+        $preAnnounceStorage ??= new class extends PreAnnounceStorage {
+            public function load(): ?PreAnnounceData { return null; }
+        };
 
         return new class(
             $helper,
@@ -126,6 +141,7 @@ final class ScheduleApiControllerTest extends TestCase
             $skipStorage,
             $queuedWindowStorage,
             $rulesProvider,
+            $preAnnounceStorage,
             $userAllowed,
         ) extends ScheduleApiController {
             public function __construct(
@@ -138,6 +154,7 @@ final class ScheduleApiControllerTest extends TestCase
                 SkipStorage $skipStorage,
                 QueuedWindowStorageInterface $queuedWindowStorage,
                 CompiledRulesProvider $rulesProvider,
+                PreAnnounceStorage $preAnnounceStorage,
                 private readonly bool $allowed,
             ) {
                 parent::__construct(
@@ -150,6 +167,7 @@ final class ScheduleApiControllerTest extends TestCase
                     $skipStorage,
                     $queuedWindowStorage,
                     $rulesProvider,
+                    $preAnnounceStorage,
                 );
             }
 
@@ -515,5 +533,319 @@ final class ScheduleApiControllerTest extends TestCase
         $ids = array_column($body['exemptions'], 'id');
         $this->assertNotContains('admin-login', $ids);
         $this->assertNotContains('admin-session', $ids);
+    }
+
+    public function testListSchedulesIncludesPreAnnounceKey(): void
+    {
+        $storage = $this->createStub(ScheduleStorage::class);
+        $storage->method('findAll')->willReturn([]);
+
+        $at = new \DateTimeImmutable('+2 hours', new \DateTimeZone('UTC'));
+        $preAnnounceStorage = new class($at) extends PreAnnounceStorage {
+            public function __construct(private readonly \DateTimeImmutable $at) {}
+            public function load(): ?PreAnnounceData
+            {
+                return new PreAnnounceData($this->at, 'UTC', 'Deploy', null);
+            }
+        };
+
+        $controller = $this->makeController(scheduleStorage: $storage, preAnnounceStorage: $preAnnounceStorage);
+        $data = \json_decode($controller->schedules()->getContent(), true);
+
+        self::assertArrayHasKey('preAnnounce', $data);
+        self::assertNotNull($data['preAnnounce']);
+        self::assertSame('Deploy', $data['preAnnounce']['reason']);
+    }
+
+    private function makeActivationContextWithScope(?MaintenanceScope $scope): ActivationContext
+    {
+        $storage = new class($scope) implements ContextStorageInterface {
+            private ?array $scopeRaw = null;
+
+            public function __construct(private readonly ?MaintenanceScope $scope) {}
+
+            #[\Override]
+            public function load(): array
+            {
+                $scopeRaw = $this->scope !== null
+                    ? ['path_prefixes' => $this->scope->pathPrefixes, 'site_ids' => $this->scope->siteIds]
+                    : null;
+                return [
+                    'reason'                             => null,
+                    'retry_after'                        => null,
+                    'activated_by_schedule_window_id'    => null,
+                    'expected_end_at'                    => null,
+                    'activated_by_health_check_failure'  => false,
+                    'activated_by_history_record_id'     => null,
+                    'scope'                              => $scopeRaw,
+                ];
+            }
+
+            #[\Override]
+            public function save(
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+            ): void {}
+
+            #[\Override]
+            public function clear(): void {}
+
+            #[\Override]
+            public function saveScope(?array $scopeRaw): void
+            {
+                $this->scopeRaw = $scopeRaw;
+            }
+        };
+
+        return new ActivationContext($storage);
+    }
+
+    public function testGetSchedulesIncludesScopePerWindow(): void
+    {
+        $scope  = new MaintenanceScope(['/shop'], [42]);
+        $window = new ScheduleWindow(
+            'win-scope', 'UTC', null,
+            new \DateTimeImmutable('2026-06-02T10:00:00Z'),
+            new \DateTimeImmutable('2026-06-02T11:00:00Z'),
+            null, null, 0, 1, 'admin',
+            $scope,
+        );
+
+        $storage = $this->createStub(ScheduleStorage::class);
+        $storage->method('findAll')->willReturn([$window]);
+
+        $queued = $this->createStub(QueuedWindowStorageInterface::class);
+        $queued->method('all')->willReturn([]);
+
+        $controller = $this->makeController(
+            scheduleStorage: $storage,
+            activationContext: $this->makeActivationContext(null),
+            overlapDetector: new OverlapDetector(),
+            queuedWindowStorage: $queued,
+        );
+
+        $data = \json_decode($controller->schedules()->getContent(), true);
+
+        self::assertArrayHasKey('scope', $data['windows'][0]);
+        $s = $data['windows'][0]['scope'];
+        self::assertFalse($s['global']);
+        self::assertSame(['/shop'], $s['pathPrefixes']);
+        self::assertSame([42], $s['siteIds']);
+    }
+
+    public function testGetSchedulesNullScopeReturnsGlobalScope(): void
+    {
+        $window = $this->buildWindow('win-no-scope');
+
+        $storage = $this->createStub(ScheduleStorage::class);
+        $storage->method('findAll')->willReturn([$window]);
+
+        $queued = $this->createStub(QueuedWindowStorageInterface::class);
+        $queued->method('all')->willReturn([]);
+
+        $controller = $this->makeController(
+            scheduleStorage: $storage,
+            activationContext: $this->makeActivationContext(null),
+            overlapDetector: new OverlapDetector(),
+            queuedWindowStorage: $queued,
+        );
+
+        $data = \json_decode($controller->schedules()->getContent(), true);
+
+        self::assertArrayHasKey('scope', $data['windows'][0]);
+        $s = $data['windows'][0]['scope'];
+        self::assertTrue($s['global']);
+        self::assertSame([], $s['pathPrefixes']);
+        self::assertSame([], $s['siteIds']);
+    }
+
+    public function testGetMaintenanceStatusIncludesScope(): void
+    {
+        $scope = new MaintenanceScope(['/api'], [7]);
+        $activationContext = $this->makeActivationContextWithScope($scope);
+
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
+        $helper->method('isActive')->willReturn(true);
+
+        $config = new BundleConfiguration(
+            bypassAuthenticatedAdmins: false,
+            defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
+            publicStatusEnabled: true,
+            publicStatusToken: null,
+            autoInjectBanner: true,
+            defaultThresholdMinutes: 60,
+            urgencyOrangeMinutes: 30,
+            urgencyRedMinutes: 10,
+            dismissPersistence: 'session',
+            mailOnPreAnnounce: false,
+            mailOnMaintenanceStart: false,
+            mailOnMaintenanceEnd: false,
+            mailRecipients: [],
+            mailOnPreAnnounceRecipients: [],
+            mailOnMaintenanceStartRecipients: [],
+            mailOnMaintenanceEndRecipients: [],
+            mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
+            notificationWebhooks: [],
+        );
+
+        $scheduleStorage = $this->createStub(ScheduleStorage::class);
+        $scheduleStorage->method('findAll')->willReturn([]);
+
+        $controller = new class(
+            $helper,
+            $activationContext,
+            $scheduleStorage,
+            $config,
+            new OverlapDetector(),
+            $this->createStub(ScheduleHistoryRepositoryInterface::class),
+            $this->createStub(SkipStorage::class),
+            $this->createStub(QueuedWindowStorageInterface::class),
+            new CompiledRulesProvider([]),
+            new class extends PreAnnounceStorage {
+                public function load(): ?PreAnnounceData { return null; }
+            },
+        ) extends ScheduleApiController {
+            #[\Override]
+            protected function isAllowedToManage(): bool { return true; }
+
+            #[\Override]
+            protected function json(mixed $data, int $status = 200, array $headers = [], array $context = []): \Symfony\Component\HttpFoundation\JsonResponse
+            {
+                return new \Symfony\Component\HttpFoundation\JsonResponse($data, $status, $headers);
+            }
+
+            #[\Override]
+            protected function getPimcoreUser(bool $proxyUser = false): \Pimcore\Security\User\User|\Pimcore\Model\User|null
+            {
+                return null;
+            }
+        };
+
+        $request = Request::create('/maintenance-status', 'GET');
+        $response = $controller->publicStatus($request);
+        $data = \json_decode($response->getContent(), true);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertArrayHasKey('scope', $data);
+        self::assertFalse($data['scope']['global']);
+        self::assertSame(['/api'], $data['scope']['pathPrefixes']);
+        self::assertSame([7], $data['scope']['siteIds']);
+    }
+
+    public function testGetMaintenanceStatusNullScopeReturnsGlobal(): void
+    {
+        $activationContext = $this->makeActivationContextWithScope(null);
+
+        $config = new BundleConfiguration(
+            bypassAuthenticatedAdmins: false,
+            defaultRetryAfter: null,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
+            publicStatusEnabled: true,
+            publicStatusToken: null,
+            autoInjectBanner: true,
+            defaultThresholdMinutes: 60,
+            urgencyOrangeMinutes: 30,
+            urgencyRedMinutes: 10,
+            dismissPersistence: 'session',
+            mailOnPreAnnounce: false,
+            mailOnMaintenanceStart: false,
+            mailOnMaintenanceEnd: false,
+            mailRecipients: [],
+            mailOnPreAnnounceRecipients: [],
+            mailOnMaintenanceStartRecipients: [],
+            mailOnMaintenanceEndRecipients: [],
+            mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
+            notificationWebhooks: [],
+        );
+
+        $scheduleStorage = $this->createStub(ScheduleStorage::class);
+        $scheduleStorage->method('findAll')->willReturn([]);
+
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
+
+        $controller = new class(
+            $helper,
+            $activationContext,
+            $scheduleStorage,
+            $config,
+            new OverlapDetector(),
+            $this->createStub(ScheduleHistoryRepositoryInterface::class),
+            $this->createStub(SkipStorage::class),
+            $this->createStub(QueuedWindowStorageInterface::class),
+            new CompiledRulesProvider([]),
+            new class extends PreAnnounceStorage {
+                public function load(): ?PreAnnounceData { return null; }
+            },
+        ) extends ScheduleApiController {
+            #[\Override]
+            protected function isAllowedToManage(): bool { return true; }
+
+            #[\Override]
+            protected function json(mixed $data, int $status = 200, array $headers = [], array $context = []): \Symfony\Component\HttpFoundation\JsonResponse
+            {
+                return new \Symfony\Component\HttpFoundation\JsonResponse($data, $status, $headers);
+            }
+
+            #[\Override]
+            protected function getPimcoreUser(bool $proxyUser = false): \Pimcore\Security\User\User|\Pimcore\Model\User|null
+            {
+                return null;
+            }
+        };
+
+        $request = Request::create('/maintenance-status', 'GET');
+        $response = $controller->publicStatus($request);
+        $data = \json_decode($response->getContent(), true);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertArrayHasKey('scope', $data);
+        self::assertTrue($data['scope']['global']);
+        self::assertSame([], $data['scope']['pathPrefixes']);
+        self::assertSame([], $data['scope']['siteIds']);
+    }
+
+    public function testPostScheduleWithScopeStoresScope(): void
+    {
+        $capturedWindow = null;
+
+        $scheduleStorage = $this->createMock(ScheduleStorage::class);
+        $scheduleStorage->method('findAll')->willReturn([]);
+        $scheduleStorage->expects($this->once())
+            ->method('add')
+            ->willReturnCallback(function (ScheduleWindow $w) use (&$capturedWindow): void {
+                $capturedWindow = $w;
+            });
+
+        $controller = $this->makeController(userAllowed: true, scheduleStorage: $scheduleStorage);
+
+        $body = \json_encode([
+            'type'         => 'one-time',
+            'from'         => '2026-06-10T10:00:00Z',
+            'to'           => '2026-06-10T11:00:00Z',
+            'pathPrefixes' => ['/shop', '/checkout'],
+            'siteIds'      => [1, 2],
+        ]);
+        $request = Request::create('/admin/advanced-maintenance-mode/schedules', 'POST', [], [], [], [], $body);
+        $response = $controller->createSchedule($request);
+
+        self::assertSame(201, $response->getStatusCode());
+        self::assertNotNull($capturedWindow);
+        self::assertNotNull($capturedWindow->scope);
+        self::assertFalse($capturedWindow->scope->isGlobal());
+        self::assertSame(['/shop', '/checkout'], $capturedWindow->scope->pathPrefixes);
+        self::assertSame([1, 2], $capturedWindow->scope->siteIds);
     }
 }

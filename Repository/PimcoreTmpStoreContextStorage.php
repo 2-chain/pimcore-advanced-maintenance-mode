@@ -37,6 +37,19 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
             'activated_by_history_record_id'     => isset($data['activated_by_history_record_id']) && is_int($data['activated_by_history_record_id'])
                 ? $data['activated_by_history_record_id']
                 : null,
+            'scope' => (static function(?array $raw): ?array {
+                if (!\is_array($raw)
+                    || !isset($raw['path_prefixes'], $raw['site_ids'])
+                    || !\is_array($raw['path_prefixes'])
+                    || !\is_array($raw['site_ids'])
+                ) {
+                    return null;
+                }
+                return [
+                    'path_prefixes' => \array_values(\array_filter($raw['path_prefixes'], 'is_string')),
+                    'site_ids'      => \array_values(\array_filter($raw['site_ids'], 'is_int')),
+                ];
+            })($data['scope'] ?? null),
         ];
     }
 
@@ -73,7 +86,20 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
         \Pimcore\Model\Tool\TmpStore::delete(self::KEY);
     }
 
-    /** @return array{reason: null, retry_after: null, activated_by_schedule_window_id: null, expected_end_at: null, activated_by_health_check_failure: false, activated_by_history_record_id: null} */
+    #[Override]
+    public function saveScope(?array $scopeRaw): void
+    {
+        if (!class_exists(\Pimcore\Model\Tool\TmpStore::class)) {
+            return;
+        }
+
+        $entry = \Pimcore\Model\Tool\TmpStore::get(self::KEY);
+        $data  = ($entry !== null && \is_array($entry->getData())) ? $entry->getData() : $this->empty();
+        $data['scope'] = $scopeRaw;
+        \Pimcore\Model\Tool\TmpStore::set(self::KEY, $data);
+    }
+
+    /** @return array{reason: null, retry_after: null, activated_by_schedule_window_id: null, expected_end_at: null, activated_by_health_check_failure: false, activated_by_history_record_id: null, scope: null} */
     private function empty(): array
     {
         return [
@@ -83,6 +109,7 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
             'expected_end_at'                    => null,
             'activated_by_health_check_failure'  => false,
             'activated_by_history_record_id'     => null,
+            'scope'                              => null,
         ];
     }
 }

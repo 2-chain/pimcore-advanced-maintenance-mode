@@ -10,7 +10,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\DependencyInjection\TwoChainAd
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\CommandRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\IpRule;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider;
 
 final class ExtensionWiringTest extends TestCase
 {

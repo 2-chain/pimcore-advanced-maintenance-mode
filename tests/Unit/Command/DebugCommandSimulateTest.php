@@ -15,11 +15,13 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\IpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ContextStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\CommandRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\IpRuleMatcher;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 
 final class DebugCommandSimulateTest extends TestCase
 {
@@ -29,7 +31,7 @@ final class DebugCommandSimulateTest extends TestCase
         $storage = new class implements ContextStorageInterface {
             public function load(): array
             {
-                return ['reason' => null, 'retry_after' => null];
+                return ['reason' => null, 'retry_after' => null, 'activated_by_schedule_window_id' => null, 'expected_end_at' => null, 'activated_by_health_check_failure' => false, 'activated_by_history_record_id' => null, 'expires_at' => null, 'original_ttl_minutes' => null, 'warning_emitted_at' => null];
             }
             public function save(
                 ?string $reason,
@@ -38,7 +40,12 @@ final class DebugCommandSimulateTest extends TestCase
                 ?string $expectedEndAt = null,
                 bool $activatedByHealthCheckFailure = false,
                 ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null,
+                ?int $originalTtlMinutes = null,
+                ?string $warningEmittedAt = null,
             ): void {}
+            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
+            public function saveScope(?array $scopeRaw): void {}
             public function clear(): void {}
         };
         $evaluator = new ExemptionEvaluator(
@@ -53,6 +60,8 @@ final class DebugCommandSimulateTest extends TestCase
             config: new BundleConfiguration(
                 bypassAuthenticatedAdmins: true,
                 defaultRetryAfter: 300,
+                defaultTtl: null,
+                expiryWarningThreshold: null,
                 publicStatusEnabled: false,
                 publicStatusToken: null,
                 autoInjectBanner: true,
@@ -68,9 +77,15 @@ final class DebugCommandSimulateTest extends TestCase
                 mailOnMaintenanceStartRecipients: [],
                 mailOnMaintenanceEndRecipients: [],
                 mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
                 notificationWebhooks: [],
             ),
             compiledRules: $rules,
+            preAnnounceStorage: new class extends PreAnnounceStorage {
+                public function load(): ?PreAnnounceData { return null; }
+            },
         );
     }
 

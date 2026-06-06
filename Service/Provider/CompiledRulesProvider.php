@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
+namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider;
 
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\CommandRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;

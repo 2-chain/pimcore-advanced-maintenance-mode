@@ -20,6 +20,7 @@ final class ActivationContextTest extends TestCase
                 'expected_end_at'                     => null,
                 'activated_by_health_check_failure'   => false,
                 'activated_by_history_record_id'      => null,
+                'scope'                               => null,
             ];
 
             #[\Override] public function load(): array { return $this->state; }
@@ -39,6 +40,7 @@ final class ActivationContextTest extends TestCase
                     'expected_end_at'                     => $expectedEndAt,
                     'activated_by_health_check_failure'   => $activatedByHealthCheckFailure,
                     'activated_by_history_record_id'      => $activatedByHistoryRecordId,
+                    'scope'                               => $this->state['scope'] ?? null,
                 ];
             }
 
@@ -51,8 +53,11 @@ final class ActivationContextTest extends TestCase
                     'expected_end_at'                     => null,
                     'activated_by_health_check_failure'   => false,
                     'activated_by_history_record_id'      => null,
+                    'scope'                               => null,
                 ];
             }
+
+            #[\Override] public function saveScope(?array $scopeRaw): void {}
         };
     }
 

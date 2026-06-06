@@ -217,7 +217,8 @@ pimcore.bundle.twochain_advanced_maintenance_mode.MaintenanceWindowsPanel = Clas
         this.windowsStore = Ext.create('Ext.data.Store', {
             fields: ['id', 'type', 'timezone', 'reason', 'from', 'to', 'cronExpression',
                      'durationMinutes', 'announceBeforeMinutes', 'createdByUsername',
-                     'activeNow', 'queued', 'overlappingWith', 'nextFires'],
+                     'activeNow', 'queued', 'overlappingWith', 'nextFires',
+                     { name: 'scope', type: 'auto' }],
             pageSize: 25,
             proxy: {
                 type: 'memory',
@@ -267,6 +268,27 @@ pimcore.bundle.twochain_advanced_maintenance_mode.MaintenanceWindowsPanel = Clas
                 },
                 { text: 'Created by', dataIndex: 'createdByUsername', width: 100,
                   renderer: function (v) { return Ext.htmlEncode(v || ''); }
+                },
+                { text: t('Scope'), dataIndex: 'scope', width: 150,
+                  renderer: function (scope) {
+                      if (!scope || scope.global) {
+                          return 'Global';
+                      }
+                      var parts = [];
+                      if (scope.pathPrefixes && scope.pathPrefixes.length > 0) {
+                          var paths = scope.pathPrefixes.join(', ');
+                          parts.push(paths.length > 30 ? paths.substring(0, 29) + '…' : paths);
+                      }
+                      if (scope.siteIds && scope.siteIds.length > 0) {
+                          parts.push('site ' + scope.siteIds.join(', '));
+                      }
+                      if (parts.length === 0) { return 'Global'; }
+                      var summary = parts.join(' · ');
+                      return '<span title="' + Ext.htmlEncode(
+                          (scope.pathPrefixes || []).join(', ') +
+                          (scope.siteIds && scope.siteIds.length ? ' · site ' + scope.siteIds.join(', ') : '')
+                      ) + '">' + Ext.htmlEncode(summary) + '</span>';
+                  }
                 },
                 { xtype: 'actioncolumn', width: 56, sortable: false,
                   items: [
@@ -717,6 +739,50 @@ pimcore.bundle.twochain_advanced_maintenance_mode.MaintenanceWindowsPanel = Clas
                 reasonField,
                 announceField,
                 {
+                    xtype: 'fieldset',
+                    title: t('Scope (leave empty for global maintenance)'),
+                    collapsible: true,
+                    collapsed: true,
+                    itemId: 'scopeFieldset',
+                    anchor: '100%',
+                    items: [
+                        {
+                            xtype: 'fieldcontainer',
+                            fieldLabel: t('Path prefixes'),
+                            itemId: 'pathPrefixContainer',
+                            labelWidth: LW,
+                            layout: 'vbox',
+                            anchor: '100%',
+                            items: []
+                        },
+                        {
+                            xtype: 'button',
+                            text: t('+ Add path prefix'),
+                            margin: '4 0 8 0',
+                            handler: function () {
+                                var fieldset = this.up('[itemId=scopeFieldset]');
+                                var container = fieldset.down('[itemId=pathPrefixContainer]');
+                                container.add({
+                                    xtype: 'textfield',
+                                    name: 'pathPrefix',
+                                    emptyText: '/shop',
+                                    width: 300,
+                                    margin: '2 0 2 0'
+                                });
+                                container.updateLayout();
+                            }
+                        },
+                        {
+                            xtype: 'textfield',
+                            name: 'siteIds',
+                            fieldLabel: t('Site IDs (comma-separated)'),
+                            labelWidth: LW,
+                            emptyText: '1,2,3',
+                            anchor: '100%'
+                        }
+                    ]
+                },
+                {
                     xtype: 'component',
                     html: '<div style="color:#888;font-size:11px;margin-top:10px">' +
                           '<span style="color:red;font-weight:bold">*</span> Required field</div>'
@@ -740,6 +806,31 @@ pimcore.bundle.twochain_advanced_maintenance_mode.MaintenanceWindowsPanel = Clas
                     }
 
                     var isRecurring = typeCombo.getValue() === 'recurring';
+
+                    // Collect path prefix values
+                    var pathPrefixContainer = form.down('[itemId=pathPrefixContainer]');
+                    var pathPrefixes = [];
+                    if (pathPrefixContainer) {
+                        pathPrefixContainer.items.each(function (field) {
+                            var val = field.getValue ? field.getValue() : null;
+                            if (val && val.trim() !== '') {
+                                pathPrefixes.push(val.trim());
+                            }
+                        });
+                    }
+
+                    // Collect site IDs
+                    var siteIdsField = form.down('[name=siteIds]');
+                    var siteIds = [];
+                    if (siteIdsField) {
+                        var raw = siteIdsField.getValue();
+                        if (raw && raw.trim() !== '') {
+                            siteIds = raw.split(',').map(function (s) {
+                                return parseInt(s.trim(), 10);
+                            }).filter(function (n) { return !isNaN(n); });
+                        }
+                    }
+
                     var payload = {
                         type:                  typeCombo.getValue(),
                         from:                  isRecurring ? null : buildIso(fromDate, fromTime),
@@ -748,7 +839,9 @@ pimcore.bundle.twochain_advanced_maintenance_mode.MaintenanceWindowsPanel = Clas
                         durationMinutes:       isRecurring ? (durationField.getValue() || null) : null,
                         timezone:              timezoneCombo.getValue() || 'UTC',
                         reason:                reasonField.getValue() || null,
-                        announceBeforeMinutes: announceField.getValue() || 0
+                        announceBeforeMinutes: announceField.getValue() || 0,
+                        pathPrefixes:          pathPrefixes,
+                        siteIds:               siteIds
                     };
 
                     function doCreate(forceCreate) {

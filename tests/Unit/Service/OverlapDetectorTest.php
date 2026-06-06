@@ -6,7 +6,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Service;
 
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\OverlapDetector;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\OverlapDetector;
 
 final class OverlapDetectorTest extends TestCase
 {

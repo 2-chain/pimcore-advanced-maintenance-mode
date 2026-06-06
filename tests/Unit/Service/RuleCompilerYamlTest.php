@@ -24,6 +24,7 @@ final class RuleCompilerYamlTest extends TestCase
                 'scheduled_tasks'   => false,
             ], $exemptions),
             'builtin_exemptions' => [
+                'pimcore_maintenance'   => false,
                 'bundle_own_commands'   => false,
                 'symfony_info_commands' => false,
                 'loopback'              => false,

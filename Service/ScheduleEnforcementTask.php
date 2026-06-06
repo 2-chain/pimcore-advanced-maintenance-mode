@@ -17,6 +17,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\QueuedWi
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ScheduleHistoryRepositoryInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\SkipStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PendingHealthCheckStorage;
 
 #[WithMonologChannel('advanced_maintenance_mode')]
 final class ScheduleEnforcementTask implements TaskInterface
@@ -31,6 +33,8 @@ final class ScheduleEnforcementTask implements TaskInterface
         private readonly LoggerInterface $logger,
         private readonly ScheduleHistoryRepositoryInterface $historyRepo,
         private readonly SkipStorage $skipStorage,
+        private readonly BundleConfiguration $config,
+        private readonly ?PendingHealthCheckStorage $pendingStorage = null,
     ) {}
 
     #[Override]
@@ -69,6 +73,7 @@ final class ScheduleEnforcementTask implements TaskInterface
                     // deactivate it — the scheduled window has expired.
                     if ($modeOn && $ownerWindowId === null) {
                         $this->helper->deactivate();
+                        $this->pendingStorage?->write('schedule_ended');
                         $this->context->clear();
                         $modeOn = false;
                         $this->logger->warning('Deactivated maintenance: context was orphaned (no ownerWindowId) but expired window had an open history record', ['windowId' => $w->id]);
@@ -107,6 +112,8 @@ final class ScheduleEnforcementTask implements TaskInterface
                 configuredDurationMinutes: $primary->durationMinutes,
             );
             $this->context->setActivatedByHistoryRecordId($historyId);
+            $resolvedScope = $primary->scope ?? $this->config->defaultScope;
+            $this->context->setScope($resolvedScope);
             $this->logger->info('Maintenance mode activated by schedule window', ['id' => $primary->id]);
             return;
         }
@@ -118,11 +125,14 @@ final class ScheduleEnforcementTask implements TaskInterface
                 $next = $this->storage->findById($nextId);
                 if ($next !== null && $next->isActiveAt($now)) {
                     $this->context->set($next->reason, null, $next->id, $next->computeExpectedEndAt($now));
+                    $resolvedScope = $next->scope ?? $this->config->defaultScope;
+                    $this->context->setScope($resolvedScope);
                     $this->logger->info('Active schedule window changed from queue', ['id' => $next->id]);
                     return;
                 }
             }
             $this->helper->deactivate();
+            $this->pendingStorage?->write('schedule_ended');
             $historyId = $this->context->getActivatedByHistoryRecordId();
             if ($historyId !== null) {
                 $this->historyRepo->updateEnd($historyId, $now, 'schedule');
@@ -160,6 +170,8 @@ final class ScheduleEnforcementTask implements TaskInterface
                 );
                 $this->context->set($primary->reason, null, $primary->id, $primary->computeExpectedEndAt($now));
                 $this->context->setActivatedByHistoryRecordId($newHistoryId);
+                $resolvedScope = $primary->scope ?? $this->config->defaultScope;
+                $this->context->setScope($resolvedScope);
                 $this->logger->info('Active schedule window changed', ['old' => $ownerWindowId, 'new' => $primary->id]);
             }
             return;
@@ -176,6 +188,7 @@ final class ScheduleEnforcementTask implements TaskInterface
             if ($historyId !== null && $this->historyRepo->isInProgress($historyId)) {
                 $this->historyRepo->updateEnd($historyId, $now, 'schedule');
                 $this->helper->deactivate();
+                $this->pendingStorage?->write('schedule_ended');
                 $this->context->clear();
                 $this->logger->warning(
                     'Deactivated maintenance: orphaned schedule activation (ownerWindowId lost, history still open)',

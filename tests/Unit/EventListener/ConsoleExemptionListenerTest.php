@@ -6,6 +6,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\EventListener
 
 use PHPUnit\Framework\TestCase;
 use Pimcore\Tool\MaintenanceModeHelperInterface;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -17,12 +18,11 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\EventListener\ConsoleExemption
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\CommandRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ContextStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\CommandRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\IpRuleMatcher;
-use RuntimeException;
 
 final class ConsoleExemptionListenerTest extends TestCase
 {
@@ -32,7 +32,7 @@ final class ConsoleExemptionListenerTest extends TestCase
             public function __construct(private readonly ?string $reason) {}
             public function load(): array
             {
-                return ['reason' => $this->reason, 'retry_after' => null];
+                return ['reason' => $this->reason, 'retry_after' => null, 'activated_by_schedule_window_id' => null, 'expected_end_at' => null, 'activated_by_health_check_failure' => false, 'activated_by_history_record_id' => null, 'expires_at' => null, 'original_ttl_minutes' => null, 'warning_emitted_at' => null];
             }
             public function save(
                 ?string $reason,
@@ -41,7 +41,30 @@ final class ConsoleExemptionListenerTest extends TestCase
                 ?string $expectedEndAt = null,
                 bool $activatedByHealthCheckFailure = false,
                 ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null,
+                ?int $originalTtlMinutes = null,
+                ?string $warningEmittedAt = null,
             ): void {}
+            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
+            public function saveScope(?array $scopeRaw): void {}
+            public function clear(): void {}
+        };
+        return new ActivationContext($storage);
+    }
+
+    private function fakeContextFromStorage(array $state): ActivationContext
+    {
+        $storage = new class ($state) implements ContextStorageInterface {
+            public function __construct(private readonly array $state) {}
+            public function load(): array { return $this->state; }
+            public function save(
+                ?string $reason, ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null, ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false, ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null, ?int $originalTtlMinutes = null, ?string $warningEmittedAt = null,
+            ): void {}
+            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
+            public function saveScope(?array $scopeRaw): void {}
             public function clear(): void {}
         };
         return new ActivationContext($storage);
@@ -152,5 +175,63 @@ final class ConsoleExemptionListenerTest extends TestCase
         $this->expectExceptionMessage('In maintenance mode (reason: DB migration v3.5) — set --ignore-maintenance-mode to force execution.');
 
         $listener->onConsoleCommand($event);
+    }
+
+    public function testTtlExpiryLineAppendedWhenTtlActive(): void
+    {
+        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+47 minutes');
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
+        $helper->method('isActive')->willReturn(true);
+        $evaluator = new ExemptionEvaluator(
+            new HttpRuleMatcher(new IpRuleMatcher(), $this->createStub(RequestMatcherInterface::class)),
+            new CommandRuleMatcher(),
+            [new CommandRule('msg', 'messenger:*', RuleSource::Yaml)],
+        );
+        $context = $this->fakeContextFromStorage([
+            'reason'                            => null,
+            'retry_after'                       => null,
+            'activated_by_schedule_window_id'   => null,
+            'expected_end_at'                   => null,
+            'activated_by_health_check_failure' => false,
+            'activated_by_history_record_id'    => null,
+            'expires_at'                        => $expiresAt->format(\DateTimeInterface::ATOM),
+            'original_ttl_minutes'              => 60,
+            'warning_emitted_at'                => null,
+        ]);
+        $listener = new ConsoleExemptionListener($helper, $evaluator, $context);
+        $event = $this->makeEvent('messenger:consume');
+
+        $listener->onConsoleCommand($event);
+
+        self::assertStringContainsString('Expires in:', $event->getOutput()->fetch());
+    }
+
+    public function testTtlExpiryLineNotAppendedWhenScheduleManaged(): void
+    {
+        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+30 minutes');
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
+        $helper->method('isActive')->willReturn(true);
+        $evaluator = new ExemptionEvaluator(
+            new HttpRuleMatcher(new IpRuleMatcher(), $this->createStub(RequestMatcherInterface::class)),
+            new CommandRuleMatcher(),
+            [new CommandRule('msg', 'messenger:*', RuleSource::Yaml)],
+        );
+        $context = $this->fakeContextFromStorage([
+            'reason'                            => null,
+            'retry_after'                       => null,
+            'activated_by_schedule_window_id'   => 'window-nightly',
+            'expected_end_at'                   => null,
+            'activated_by_health_check_failure' => false,
+            'activated_by_history_record_id'    => null,
+            'expires_at'                        => $expiresAt->format(\DateTimeInterface::ATOM),
+            'original_ttl_minutes'              => 30,
+            'warning_emitted_at'                => null,
+        ]);
+        $listener = new ConsoleExemptionListener($helper, $evaluator, $context);
+        $event = $this->makeEvent('messenger:consume');
+
+        $listener->onConsoleCommand($event);
+
+        self::assertStringNotContainsString('Expires in:', $event->getOutput()->fetch());
     }
 }

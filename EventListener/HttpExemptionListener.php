@@ -11,17 +11,19 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\ExemptionMatch;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetectorInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\AdminSessionDetectorInterface;
 
 final class HttpExemptionListener implements EventSubscriberInterface
 {
     public function __construct(
         private readonly MaintenanceModeHelperInterface $helper,
-        private readonly ExemptionEvaluator $evaluator,
-        private readonly AdminSessionDetectorInterface $adminDetector,
-        private readonly BundleConfiguration $config,
+        private readonly ExemptionEvaluator             $evaluator,
+        private readonly AdminSessionDetectorInterface  $adminDetector,
+        private readonly BundleConfiguration            $config,
+        private readonly ActivationContext              $context,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -68,6 +70,19 @@ final class HttpExemptionListener implements EventSubscriberInterface
         if ($match !== null) {
             $request->attributes->set('_advanced_maintenance_match', $match);
             return;
+        }
+
+        // Scope check: only activate maintenance if request matches the current scope.
+        $contextScope = $this->context->getScope();
+        if ($contextScope !== null && !$contextScope->isGlobal()) {
+            $currentSiteId = null;
+            if (\class_exists(\Pimcore\Tool\Frontend::class) && \method_exists(\Pimcore\Tool\Frontend::class, 'getSiteForRequest')) {
+                $site = \Pimcore\Tool\Frontend::getSiteForRequest($request);
+                $currentSiteId = $site?->getId();
+            }
+            if (!$contextScope->matchesRequest($request, $currentSiteId)) {
+                return;
+            }
         }
 
         $request->attributes->set('_advanced_maintenance_active', true);

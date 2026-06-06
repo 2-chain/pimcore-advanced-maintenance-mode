@@ -5,27 +5,27 @@ declare(strict_types=1);
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\DependencyInjection\Compiler;
 
 use LogicException;
+use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Attribute\ExemptFromMaintenance;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\CommandRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
-use ReflectionAttribute;
-use Throwable;
 
 final class AttributeExemptionDiscoveryPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition(\TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider::class)) {
+        if (!$container->hasDefinition(\TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider::class)) {
             return;
         }
-        $providerDef = $container->getDefinition(\TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider::class);
+        $providerDef = $container->getDefinition(\TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider::class);
 
         /** @var list<array<string, mixed>> $existing */
         $existing = (array) $providerDef->getArgument('$rulesData');
@@ -85,7 +85,7 @@ final class AttributeExemptionDiscoveryPass implements CompilerPassInterface
         }
 
         if ($discoveredRules !== []) {
-            $serialized = \TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider::serialize($discoveredRules);
+            $serialized = \TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider::serialize($discoveredRules);
             $providerDef->setArgument('$rulesData', [...$existing, ...$serialized]);
         }
     }

@@ -21,6 +21,20 @@ services:
         tags:
             - { name: pimcore.maintenance.task, type: advanced_maintenance_schedule_enforcement }
 
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExpiryEnforcementTask:
+        tags:
+            - { name: pimcore.maintenance.task, type: two_chain_advanced_maintenance_ttl_expiry }
+        arguments:
+            $logger: '@monolog.logger.advanced_maintenance_mode'
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\EnableCommand:
+        arguments:
+            $logger: '@monolog.logger.advanced_maintenance_mode'
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\HeartbeatCommand:
+        arguments:
+            $logger: '@monolog.logger.advanced_maintenance_mode'
+
     TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminBypassToken:
         arguments:
             $secret: '%kernel.secret%'
@@ -37,6 +51,8 @@ services:
         arguments:
             $bypassAuthenticatedAdmins:              '%two_chain_advanced_maintenance_mode.bypass_authenticated_admins%'
             $defaultRetryAfter:                      '%two_chain_advanced_maintenance_mode.default_retry_after%'
+            $defaultTtl:                             '%two_chain_advanced_maintenance_mode.default_ttl%'
+            $expiryWarningThreshold:                 '%two_chain_advanced_maintenance_mode.expiry_warning_threshold%'
             $publicStatusEnabled:                    '%two_chain_advanced_maintenance_mode.public_status_enabled%'
             $publicStatusToken:                      '%two_chain_advanced_maintenance_mode.public_status_token%'
             $autoInjectBanner:                       '%two_chain_advanced_maintenance_mode.auto_inject_banner%'
@@ -52,7 +68,11 @@ services:
             $mailOnMaintenanceStartRecipients:       '%two_chain_advanced_maintenance_mode.mail_on_maintenance_start_recipients%'
             $mailOnMaintenanceEndRecipients:         '%two_chain_advanced_maintenance_mode.mail_on_maintenance_end_recipients%'
             $mailTemplate:                           '%two_chain_advanced_maintenance_mode.mail_template%'
+            $mailPreAnnounceTemplate:                '%two_chain_advanced_maintenance_mode.mail_pre_announce_template%'
+            $mailMaintenanceStartTemplate:           '%two_chain_advanced_maintenance_mode.mail_maintenance_start_template%'
+            $mailMaintenanceEndTemplate:             '%two_chain_advanced_maintenance_mode.mail_maintenance_end_template%'
             $notificationWebhooks:                   '%two_chain_advanced_maintenance_mode.notification_webhooks%'
+            $defaultScopeData:                       '%two_chain_advanced_maintenance_mode.default_scope%'
 
     # CompiledRulesProvider holds the SCALAR serialized rules in its argument.
     # The Extension and AttributeExemptionDiscoveryPass populate $rulesData.
@@ -72,3 +92,19 @@ services:
 
     # Listeners are auto-tagged by autoconfigure (they implement EventSubscriberInterface).
     # No explicit kernel.event_subscriber tag needed thanks to autoconfigure: true.
+
+    # Health check services
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PendingHealthCheckStorage: ~
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\HealthCheck\HealthCheckRunner:
+        arguments:
+            $checks: []
+
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Maintenance\PostMaintenanceCheckTask:
+        arguments:
+            $sessionId: 'advanced-maintenance'
+            $cacheCleanup: null
+            $mailNotifier: '@TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier'
+            $webhookNotifier: '@TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier'
+        tags:
+            - { name: pimcore.maintenance.task, type: two_chain_advanced_maintenance_post_check }

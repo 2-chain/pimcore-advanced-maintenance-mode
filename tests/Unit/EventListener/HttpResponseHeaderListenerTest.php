@@ -14,7 +14,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\ExemptionMatch;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ContextStorageInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
 
 final class HttpResponseHeaderListenerTest extends TestCase
 {
@@ -24,7 +24,7 @@ final class HttpResponseHeaderListenerTest extends TestCase
             public function __construct(private readonly ?string $reason, private readonly ?int $retryAfter) {}
             public function load(): array
             {
-                return ['reason' => $this->reason, 'retry_after' => $this->retryAfter];
+                return ['reason' => $this->reason, 'retry_after' => $this->retryAfter, 'activated_by_schedule_window_id' => null, 'expected_end_at' => null, 'activated_by_health_check_failure' => false, 'activated_by_history_record_id' => null, 'expires_at' => null, 'original_ttl_minutes' => null, 'warning_emitted_at' => null];
             }
             public function save(
                 ?string $reason,
@@ -33,7 +33,12 @@ final class HttpResponseHeaderListenerTest extends TestCase
                 ?string $expectedEndAt = null,
                 bool $activatedByHealthCheckFailure = false,
                 ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null,
+                ?int $originalTtlMinutes = null,
+                ?string $warningEmittedAt = null,
             ): void {}
+            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
+            public function saveScope(?array $scopeRaw): void {}
             public function clear(): void {}
         };
         return new ActivationContext($storage);
@@ -44,6 +49,8 @@ final class HttpResponseHeaderListenerTest extends TestCase
         return new BundleConfiguration(
             bypassAuthenticatedAdmins: $bypass,
             defaultRetryAfter: $retryAfter,
+            defaultTtl: null,
+            expiryWarningThreshold: null,
             publicStatusEnabled: false,
             publicStatusToken: null,
             autoInjectBanner: true,
@@ -59,6 +66,9 @@ final class HttpResponseHeaderListenerTest extends TestCase
             mailOnMaintenanceStartRecipients: [],
             mailOnMaintenanceEndRecipients: [],
             mailTemplate: null,
+            mailPreAnnounceTemplate: null,
+            mailMaintenanceStartTemplate: null,
+            mailMaintenanceEndTemplate: null,
             notificationWebhooks: [],
         );
     }

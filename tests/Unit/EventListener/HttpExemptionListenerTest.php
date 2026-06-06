@@ -13,11 +13,14 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Routing\Matcher\RequestMatcherInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\EventListener\HttpExemptionListener;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\HttpRule;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetectorInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\AdminSessionDetectorInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\CommandRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\IpRuleMatcher;
@@ -66,13 +69,23 @@ final class HttpExemptionListenerTest extends TestCase
             $rules,
         );
 
+        $noScopeStorage = new class implements ContextStorageInterface {
+            public function load(): array { return ['reason' => null, 'retry_after' => null, 'scope' => null]; }
+            public function save(?string $reason, ?int $retryAfter, ?string $activatedByScheduleWindowId = null, ?string $expectedEndAt = null, bool $activatedByHealthCheckFailure = false, ?int $activatedByHistoryRecordId = null, ?string $expiresAt = null, ?int $originalTtlMinutes = null, ?string $warningEmittedAt = null): void {}
+            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
+            public function saveScope(?array $scopeRaw): void {}
+            public function clear(): void {}
+        };
+
         return new HttpExemptionListener(
-            helper: $helper,
-            evaluator: $evaluator,
+            helper:        $helper,
+            evaluator:     $evaluator,
             adminDetector: $admin,
-            config: new BundleConfiguration(
+            config:        new BundleConfiguration(
                 bypassAuthenticatedAdmins: $bypassAdmins,
                 defaultRetryAfter: 300,
+                defaultTtl: null,
+                expiryWarningThreshold: null,
                 publicStatusEnabled: false,
                 publicStatusToken: null,
                 autoInjectBanner: true,
@@ -88,8 +101,12 @@ final class HttpExemptionListenerTest extends TestCase
                 mailOnMaintenanceStartRecipients: [],
                 mailOnMaintenanceEndRecipients: [],
                 mailTemplate: null,
+                mailPreAnnounceTemplate: null,
+                mailMaintenanceStartTemplate: null,
+                mailMaintenanceEndTemplate: null,
                 notificationWebhooks: [],
             ),
+            context:       new ActivationContext($noScopeStorage),
         );
     }
 
@@ -224,5 +241,120 @@ final class HttpExemptionListenerTest extends TestCase
         self::assertFalse($event->isPropagationStopped());
         self::assertNull($request->attributes->get('_advanced_maintenance_match'));
         self::assertTrue($request->attributes->get('_advanced_maintenance_active'));
+    }
+
+    private function makeListenerWithScope(
+        bool              $isActive,
+        ?MaintenanceScope $scope,
+        array             $rules = [],
+    ): HttpExemptionListener {
+        $helper = $this->createStub(MaintenanceModeHelperInterface::class);
+        $helper->method('isActive')->willReturn($isActive);
+
+        $admin = new class implements AdminSessionDetectorInterface {
+            public function isLoggedInAdmin(Request $request): bool { return false; }
+        };
+
+        $evaluator = new ExemptionEvaluator(
+            new HttpRuleMatcher(new IpRuleMatcher(), $this->createStub(RequestMatcherInterface::class)),
+            new CommandRuleMatcher(),
+            $rules,
+        );
+
+        $scopeForClosure = $scope;
+        $storage = new class ($scopeForClosure) implements ContextStorageInterface {
+            public function __construct(private readonly ?MaintenanceScope $sc) {}
+            public function load(): array {
+                return [
+                    'reason'      => null,
+                    'retry_after' => null,
+                    'scope'       => $this->sc !== null
+                        ? ['path_prefixes' => $this->sc->pathPrefixes, 'site_ids' => $this->sc->siteIds]
+                        : null,
+                ];
+            }
+            public function save(?string $reason, ?int $retryAfter, ?string $activatedByScheduleWindowId = null, ?string $expectedEndAt = null, bool $activatedByHealthCheckFailure = false, ?int $activatedByHistoryRecordId = null, ?string $expiresAt = null, ?int $originalTtlMinutes = null, ?string $warningEmittedAt = null): void {}
+            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
+            public function saveScope(?array $scopeRaw): void {}
+            public function clear(): void {}
+        };
+        $context = new ActivationContext($storage);
+
+        return new HttpExemptionListener(
+            helper:        $helper,
+            evaluator:     $evaluator,
+            adminDetector: $admin,
+            config:        new BundleConfiguration(
+                bypassAuthenticatedAdmins: false,
+                defaultRetryAfter: 300,
+                defaultTtl: null,
+                expiryWarningThreshold: null,
+                publicStatusEnabled: false,
+                publicStatusToken: null,
+                autoInjectBanner: true,
+                defaultThresholdMinutes: 60,
+                urgencyOrangeMinutes: 30,
+                urgencyRedMinutes: 10,
+                dismissPersistence: 'session',
+                mailOnPreAnnounce: false,
+                mailOnMaintenanceStart: false,
+                mailOnMaintenanceEnd: false,
+                mailRecipients: [],
+                mailOnPreAnnounceRecipients: [],
+                mailOnMaintenanceStartRecipients: [],
+                mailOnMaintenanceEndRecipients: [],
+                mailTemplate: null,
+                mailPreAnnounceTemplate: null,
+                mailMaintenanceStartTemplate: null,
+                mailMaintenanceEndTemplate: null,
+                notificationWebhooks: [],
+            ),
+            context: $context,
+        );
+    }
+
+    public function testNullScopeActivatesGlobally(): void
+    {
+        $listener = $this->makeListenerWithScope(isActive: true, scope: null);
+        $request  = $this->makeRequest('/blog');
+        $event    = $this->makeEvent($request);
+
+        $listener->onKernelRequest($event);
+
+        self::assertTrue($request->attributes->get('_advanced_maintenance_active'));
+    }
+
+    public function testGlobalScopeActivatesGlobally(): void
+    {
+        $listener = $this->makeListenerWithScope(isActive: true, scope: new MaintenanceScope([], []));
+        $request  = $this->makeRequest('/blog');
+        $event    = $this->makeEvent($request);
+
+        $listener->onKernelRequest($event);
+
+        self::assertTrue($request->attributes->get('_advanced_maintenance_active'));
+    }
+
+    public function testPathScopeMatchActivatesMaintenance(): void
+    {
+        $listener = $this->makeListenerWithScope(isActive: true, scope: new MaintenanceScope(['/shop'], []));
+        $request  = $this->makeRequest('/shop/product/123');
+        $event    = $this->makeEvent($request);
+
+        $listener->onKernelRequest($event);
+
+        self::assertTrue($request->attributes->get('_advanced_maintenance_active'));
+    }
+
+    public function testPathScopeNoMatchPassesThrough(): void
+    {
+        $listener = $this->makeListenerWithScope(isActive: true, scope: new MaintenanceScope(['/shop'], []));
+        $request  = $this->makeRequest('/blog/post');
+        $event    = $this->makeEvent($request);
+
+        $listener->onKernelRequest($event);
+
+        self::assertNull($request->attributes->get('_advanced_maintenance_active'));
+        self::assertNull($request->attributes->get('_advanced_maintenance_match'));
     }
 }

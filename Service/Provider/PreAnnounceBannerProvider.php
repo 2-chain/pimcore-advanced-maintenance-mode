@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
+namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider;
 
 use Pimcore\Tool\MaintenanceModeHelperInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 
 class PreAnnounceBannerProvider
 {
