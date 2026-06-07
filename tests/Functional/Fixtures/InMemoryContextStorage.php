@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures;
 
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
 
 final class InMemoryContextStorage implements ContextStorageInterface
 {

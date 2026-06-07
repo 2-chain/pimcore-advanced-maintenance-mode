@@ -11,8 +11,8 @@ services:
             - '../../PimcoreAdvancedMaintenanceModeBundle.php'
 
     # Interface bindings for the storage / admin-detection seams.
-    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ContextStorageInterface:
-        alias: TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PimcoreTmpStoreContextStorage
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface:
+        alias: TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\PimcoreTmpStoreContextStorage
 
     TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetectorInterface:
         alias: TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\AdminSessionDetector

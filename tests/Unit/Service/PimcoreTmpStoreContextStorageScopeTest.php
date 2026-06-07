@@ -6,7 +6,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Service;
 
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
 
 final class PimcoreTmpStoreContextStorageScopeTest extends TestCase
 {

@@ -16,6 +16,7 @@ final class BundleConfiguration
      * @param list<string> $mailOnMaintenanceStartRecipients
      * @param list<string> $mailOnMaintenanceEndRecipients
      * @param list<string> $notificationWebhooks
+     * @param ?array{path_prefixes: array<string>, site_ids: array<int>} $defaultScopeData
      */
     public function __construct(
         public readonly bool $bypassAuthenticatedAdmins,
@@ -47,7 +48,7 @@ final class BundleConfiguration
         ?array $defaultScopeData = null,
     ) {
         $this->defaultScope = $defaultScopeData !== null && (!empty($defaultScopeData['path_prefixes']) || !empty($defaultScopeData['site_ids']))
-            ? new MaintenanceScope($defaultScopeData['path_prefixes'] ?? [], $defaultScopeData['site_ids'] ?? [])
+            ? new MaintenanceScope($defaultScopeData['path_prefixes'], $defaultScopeData['site_ids'])
             : null;
     }
 }

@@ -96,9 +96,10 @@ final class EnableCommand extends Command
         }
 
         // Resolve scope: CLI options take precedence, then YAML default, then null (global).
+        /** @var list<string> $pathPrefixes */
         $pathPrefixes  = (array) $input->getOption('path-prefix');
         $siteIdStrings = (array) $input->getOption('site-id');
-        $siteIds       = \array_map('intval', \array_filter($siteIdStrings, static fn($v) => $v !== '' && $v !== null));
+        $siteIds       = \array_map(static fn(mixed $v): int => \is_numeric($v) ? (int) $v : 0, \array_filter($siteIdStrings, static fn(mixed $v): bool => $v !== '' && $v !== null));
 
         $scope = null;
         if ($pathPrefixes !== [] || $siteIds !== []) {

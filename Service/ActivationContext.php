@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
 
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
 
 final class ActivationContext
 {
@@ -38,7 +38,7 @@ final class ActivationContext
 
     public function isActivatedByHealthCheckFailure(): bool
     {
-        return $this->storage->load()['activated_by_health_check_failure'] ?? false;
+        return $this->storage->load()['activated_by_health_check_failure'];
     }
 
     public function getExpiresAt(): ?\DateTimeImmutable
@@ -108,12 +108,12 @@ final class ActivationContext
     public function getScope(): ?MaintenanceScope
     {
         $raw = $this->storage->load()['scope'] ?? null;
-        if (!\is_array($raw) || !isset($raw['path_prefixes'], $raw['site_ids'])) {
+        if (!\is_array($raw)) {
             return null;
         }
         return new MaintenanceScope(
-            \array_values(\array_filter((array) $raw['path_prefixes'], 'is_string')),
-            \array_values(\array_filter(\array_map('intval', (array) $raw['site_ids']), static fn(int $v): bool => $v > 0)),
+            $raw['path_prefixes'],
+            $raw['site_ids'],
         );
     }
 

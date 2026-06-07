@@ -8,6 +8,8 @@ use Override;
 use Pimcore\Tool\MaintenanceModeHelperInterface;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -18,10 +20,13 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\EventListener\AdminPermissionListener;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\PimcoreAdvancedMaintenanceModeBundle;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ScheduleHistoryRepositoryInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleHistoryRepository;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\AdminSessionDetectorInterface;
-use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\InMemoryContextStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\InMemoryMaintenanceModeHelper;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\StubAdminSessionDetector;
@@ -120,11 +125,43 @@ final class TestKernel extends Kernel
             ->setAutowired(true)
             ->addTag('controller.service_arguments'));
 
+        // Stub the Monolog channel used by bundle commands/tasks (MonologBundle not loaded in tests).
+        $builder->register('monolog.logger.advanced_maintenance_mode', \Psr\Log\NullLogger::class)
+            ->setPublic(false);
+
+        // AdminPermissionListener needs Doctrine\DBAL\Connection which is not available in the
+        // lightweight functional test kernel (DoctrineBundle not loaded). Replace with a no-op.
+        $builder->setDefinition(
+            AdminPermissionListener::class,
+            (new Definition(NullAdminPermissionListener::class))->addTag('kernel.event_subscriber'),
+        );
+
+        // ScheduleHistoryRepository needs Doctrine\ORM\EntityManagerInterface (DoctrineBundle not loaded).
+        $builder->setDefinition(ScheduleHistoryRepository::class, new Definition(NullScheduleHistoryRepository::class));
+        $builder->setAlias(ScheduleHistoryRepositoryInterface::class, ScheduleHistoryRepository::class);
+
+        // SecurityBundle is not loaded in functional tests; register minimal stubs so that
+        // AdminBypassCookieListener (TokenStorageInterface) and ScheduleApiController
+        // (TokenStorageUserResolver via UserAwareController) can compile.
+        $builder->register(
+            \Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage::class,
+            \Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage::class,
+        )->setPublic(false);
+        $builder->setAlias(
+            \Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface::class,
+            \Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage::class,
+        )->setPublic(false);
+        $builder->register(
+            \Pimcore\Security\User\TokenStorageUserResolver::class,
+            \Pimcore\Security\User\TokenStorageUserResolver::class,
+        )->setAutowired(true)
+         ->setPublic(false);
+
         // Add a compiler pass to make certain FrameworkBundle services public before inlining,
         // so FrameworkBundle::boot() can access them via get() on the ContainerBuilder.
         $builder->addCompilerPass(
-            new \TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\MakeServicesPublicPass(),
-            \Symfony\Component\DependencyInjection\Compiler\PassConfig::TYPE_BEFORE_REMOVING,
+            new MakeServicesPublicPass(),
+            PassConfig::TYPE_BEFORE_REMOVING,
             -32,
         );
     }
@@ -187,7 +224,7 @@ final class TestKernel extends Kernel
  * Makes certain framework services public so FrameworkBundle::boot() can access them
  * via $container->get() when using a ContainerBuilder directly (no PHP container dump).
  */
-final class MakeServicesPublicPass implements \Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface
+final class MakeServicesPublicPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
@@ -197,6 +234,20 @@ final class MakeServicesPublicPass implements \Symfony\Component\DependencyInjec
             }
         }
     }
+}
+
+/**
+ * No-op stand-in for AdminPermissionListener — avoids the Doctrine\DBAL\Connection
+ * dependency in the functional test kernel where DoctrineBundle is not loaded.
+ */
+final class NullAdminPermissionListener implements EventSubscriberInterface
+{
+    public static function getSubscribedEvents(): array
+    {
+        return [KernelEvents::REQUEST => ['onKernelRequest', 255]];
+    }
+
+    public function onKernelRequest(RequestEvent $event): void {}
 }
 
 /**
@@ -220,5 +271,39 @@ final class PimcoreMaintenancePageStub implements EventSubscriberInterface
         if ($this->helper->isActive($sid)) {
             $event->setResponse(new Response('Service Unavailable', 503));
         }
+    }
+}
+
+/**
+ * No-op stand-in for ScheduleHistoryRepository — avoids the Doctrine\ORM\EntityManagerInterface
+ * dependency in the functional test kernel where DoctrineBundle is not loaded.
+ */
+final class NullScheduleHistoryRepository implements ScheduleHistoryRepositoryInterface
+{
+    public function insertStart(string $scheduleWindowId, \DateTimeImmutable $startedAt, string $type, ?string $reason, ?int $configuredDurationMinutes, ?array $scopePathPrefixes = null, ?array $scopeSiteIds = null): int
+    {
+        return 0;
+    }
+
+    public function updateEnd(int $historyId, \DateTimeImmutable $endedAt, ?string $endedReason = null): void {}
+
+    public function findInProgressIdByWindowId(string $windowId): ?int
+    {
+        return null;
+    }
+
+    public function findPaginated(int $page, int $pageSize, ?string $scheduleWindowId = null, ?\DateTimeImmutable $startedAfter = null, ?\DateTimeImmutable $startedBefore = null): array
+    {
+        return [];
+    }
+
+    public function count(?string $scheduleWindowId = null): int
+    {
+        return 0;
+    }
+
+    public function isInProgress(int $id): bool
+    {
+        return false;
     }
 }

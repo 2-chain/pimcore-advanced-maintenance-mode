@@ -25,7 +25,8 @@ class PreAnnounceStorage
             return null;
         }
 
-        $at = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string) $row['at']);
+        $atRaw = $row['at'];
+        $at    = \is_string($atRaw) ? \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $atRaw) : false;
         if ($at === false) {
             return null;
         }
@@ -45,6 +46,7 @@ class PreAnnounceStorage
         $this->tmpStoreClear();
     }
 
+    /** @return array<string, mixed>|null */
     protected function tmpStoreGet(): ?array
     {
         if (!\class_exists(\Pimcore\Model\Tool\TmpStore::class)) {
@@ -58,6 +60,7 @@ class PreAnnounceStorage
         return \is_array($data) ? $data : null;
     }
 
+    /** @param array<string, mixed> $data */
     protected function tmpStoreSet(array $data): void
     {
         if (!\class_exists(\Pimcore\Model\Tool\TmpStore::class)) {

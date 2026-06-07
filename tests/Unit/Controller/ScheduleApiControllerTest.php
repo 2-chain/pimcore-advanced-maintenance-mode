@@ -54,6 +54,9 @@ final class ScheduleApiControllerTest extends TestCase
                     'expected_end_at'                    => null,
                     'activated_by_health_check_failure'  => false,
                     'activated_by_history_record_id'     => $this->historyRecordId,
+                    'expires_at'                         => null,
+                    'original_ttl_minutes'               => null,
+                    'warning_emitted_at'                 => null,
                 ];
             }
 
@@ -65,9 +68,19 @@ final class ScheduleApiControllerTest extends TestCase
                 ?string $expectedEndAt = null,
                 bool $activatedByHealthCheckFailure = false,
                 ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null,
+                ?int $originalTtlMinutes = null,
+                ?string $warningEmittedAt = null,
             ): void {
                 $this->windowId = $activatedByScheduleWindowId;
             }
+
+            #[\Override]
+            public function updateExpiry(
+                ?string $expiresAt,
+                ?int $originalTtlMinutes,
+                ?string $warningEmittedAt,
+            ): void {}
 
             #[\Override]
             public function clear(): void
@@ -577,6 +590,9 @@ final class ScheduleApiControllerTest extends TestCase
                     'expected_end_at'                    => null,
                     'activated_by_health_check_failure'  => false,
                     'activated_by_history_record_id'     => null,
+                    'expires_at'                         => null,
+                    'original_ttl_minutes'               => null,
+                    'warning_emitted_at'                 => null,
                     'scope'                              => $scopeRaw,
                 ];
             }
@@ -589,6 +605,16 @@ final class ScheduleApiControllerTest extends TestCase
                 ?string $expectedEndAt = null,
                 bool $activatedByHealthCheckFailure = false,
                 ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null,
+                ?int $originalTtlMinutes = null,
+                ?string $warningEmittedAt = null,
+            ): void {}
+
+            #[\Override]
+            public function updateExpiry(
+                ?string $expiresAt,
+                ?int $originalTtlMinutes,
+                ?string $warningEmittedAt,
             ): void {}
 
             #[\Override]

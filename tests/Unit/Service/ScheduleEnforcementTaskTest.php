@@ -330,16 +330,35 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
             'expected_end_at'                    => null,
             'activated_by_health_check_failure'  => false,
             'activated_by_history_record_id'     => $this->historyRecordId,
+            'expires_at'                         => null,
+            'original_ttl_minutes'               => null,
+            'warning_emitted_at'                 => null,
             'scope'                              => $this->scopeRaw,
         ];
     }
 
     #[\Override]
-    public function save(?string $reason, ?int $retryAfter, ?string $activatedByScheduleWindowId = null, ?string $expectedEndAt = null, bool $activatedByHealthCheckFailure = false, ?int $activatedByHistoryRecordId = null): void
-    {
+    public function save(
+        ?string $reason,
+        ?int $retryAfter,
+        ?string $activatedByScheduleWindowId = null,
+        ?string $expectedEndAt = null,
+        bool $activatedByHealthCheckFailure = false,
+        ?int $activatedByHistoryRecordId = null,
+        ?string $expiresAt = null,
+        ?int $originalTtlMinutes = null,
+        ?string $warningEmittedAt = null,
+    ): void {
         $this->windowId = $activatedByScheduleWindowId;
         $this->historyRecordId = $activatedByHistoryRecordId;
     }
+
+    #[\Override]
+    public function updateExpiry(
+        ?string $expiresAt,
+        ?int $originalTtlMinutes,
+        ?string $warningEmittedAt,
+    ): void {}
 
     #[\Override]
     public function clear(): void

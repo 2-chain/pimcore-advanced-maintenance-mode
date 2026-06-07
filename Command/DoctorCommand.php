@@ -55,7 +55,7 @@ final class DoctorCommand extends Command
         return $hasFail ? Command::FAILURE : Command::SUCCESS;
     }
 
-    /** @return list<array{string, string, string}> [label, status(ok|warn|fail), detail] */
+    /** @return list<array{string, 'ok'|'warn'|'fail', string}> [label, status, detail] */
     private function runChecks(): array
     {
         $checks = [];
@@ -67,7 +67,8 @@ final class DoctorCommand extends Command
                 \Pimcore\Model\Tool\TmpStore::set($key, ['ok' => true]);
                 $entry = \Pimcore\Model\Tool\TmpStore::get($key);
                 \Pimcore\Model\Tool\TmpStore::delete($key);
-                $ok = $entry !== null && $entry->getData()['ok'] === true;
+                $data = $entry?->getData();
+                $ok = \is_array($data) && ($data['ok'] ?? null) === true;
                 $checks[] = ['TmpStore read/write/delete', $ok ? 'ok' : 'fail', ''];
             } catch (\Throwable $e) {
                 $checks[] = ['TmpStore read/write/delete', 'fail', $e->getMessage()];
@@ -108,7 +109,7 @@ final class DoctorCommand extends Command
         try {
             $cronErrors = [];
             foreach ($this->scheduleStorage->findAll() as $w) {
-                if ($w->isRecurring()) {
+                if ($w->isRecurring() && $w->cronExpression !== null) {
                     try {
                         new CronExpression($w->cronExpression);
                     } catch (\Exception) {

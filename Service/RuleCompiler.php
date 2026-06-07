@@ -17,6 +17,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Rule\RuleSource;
  *     exemptions: YamlExemptions,
  * }
  * @phpstan-type BuiltinExemptions array{
+ *     pimcore_maintenance: bool,
  *     bundle_own_commands: bool,
  *     symfony_info_commands: bool,
  *     loopback: bool,
@@ -136,7 +137,7 @@ final class RuleCompiler
         // Exempt the Pimcore maintenance runner by default. Without this, activating
         // maintenance creates a deadlock: the task that auto-deactivates it can
         // never run because the command that invokes it is blocked by maintenance.
-        if ($builtins['pimcore_maintenance'] ?? true) {
+        if ($builtins['pimcore_maintenance']) {
             $out[] = new CommandRule('pimcore-maintenance', 'pimcore:maintenance', RuleSource::Builtin);
         }
 

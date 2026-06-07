@@ -60,6 +60,9 @@ final class MaintenanceExtension extends AbstractExtension
         return $this->provider->provide()?->at;
     }
 
+    /**
+     * @return array{at: \DateTimeImmutable, atFormatted: string, reason: ?string, secondsRemaining: int, urgencyLevel: string, dismissKey: string, dismissStorage: string, scope: array{global: bool, pathPrefixes: string[], siteIds: int[]}}|null
+     */
     public function maintenanceCountdownData(): ?array
     {
         $data = $this->provider->provide();

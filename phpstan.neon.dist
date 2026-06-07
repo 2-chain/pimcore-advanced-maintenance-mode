@@ -32,6 +32,11 @@ parameters:
         -
             message: '#Cannot call method run\(\) on mixed\.#'
             path: Maintenance/PostMaintenanceCheckTask.php
+        # getSiteForRequest() existed in Pimcore 11 but was removed in Pimcore 12.
+        # The runtime method_exists() guard is correct; PHPStan only analyzes one version.
+        -
+            message: '#Call to function method_exists\(\) with .+getSiteForRequest. will always evaluate to false\.#'
+            path: EventListener/HttpExemptionListener.php
 
 includes:
     - vendor/phpstan/phpstan-symfony/extension.neon

@@ -45,7 +45,8 @@ final class ScheduleCancelCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $id = (string) $input->getArgument('id');
+        $idRaw = $input->getArgument('id');
+        $id    = \is_string($idRaw) ? $idRaw : '';
 
         if ($this->storage->findById($id) === null) {
             $io->error(\sprintf('No scheduled window with id "%s" found.', $id));

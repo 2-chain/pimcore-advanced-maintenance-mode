@@ -61,9 +61,13 @@ final class ScheduleCommand extends Command
         $io  = new SymfonyStyle($input, $output);
         $dry = (bool) $input->getOption('dry-run');
 
+        /** @var string|null $from */
         $from     = $input->getOption('from');
+        /** @var string|null $to */
         $to       = $input->getOption('to');
+        /** @var string|null $cron */
         $cron     = $input->getOption('cron');
+        /** @var string|null $duration */
         $duration = $input->getOption('duration');
 
         $hasOneTime   = ($from !== null && $to !== null);
@@ -74,30 +78,33 @@ final class ScheduleCommand extends Command
             return Command::FAILURE;
         }
 
-        $timezone            = (string) ($input->getOption('timezone') ?? 'UTC');
+        $timezoneRaw         = $input->getOption('timezone');
+        $timezone            = \is_string($timezoneRaw) && $timezoneRaw !== '' ? $timezoneRaw : 'UTC';
         $reason              = $input->getOption('reason');
         $reason              = \is_string($reason) && $reason !== '' ? $reason : null;
-        $id                  = $input->getOption('id') ?? \bin2hex(\random_bytes(8));
+        $idRaw               = $input->getOption('id');
+        $id                  = \is_string($idRaw) && $idRaw !== '' ? $idRaw : \bin2hex(\random_bytes(8));
         $announceBeforeRaw   = $input->getOption('announce-before');
         $announceBeforeMinutes = \is_numeric($announceBeforeRaw) ? (int) $announceBeforeRaw : 0;
 
         // Scope resolution
+        /** @var list<string> $pathPrefixes */
         $pathPrefixes  = (array) $input->getOption('path-prefix');
         $siteIdStrings = (array) $input->getOption('site-id');
-        $siteIds       = \array_map('intval', \array_filter($siteIdStrings, static fn($v) => $v !== '' && $v !== null));
+        $siteIds       = \array_map(static fn(mixed $v): int => \is_numeric($v) ? (int) $v : 0, \array_filter($siteIdStrings, static fn(mixed $v): bool => $v !== '' && $v !== null));
         $scope = (!empty($pathPrefixes) || !empty($siteIds))
             ? new MaintenanceScope($pathPrefixes, $siteIds)
             : null;
 
         try {
             $window = new ScheduleWindow(
-                id: (string) $id,
+                id: $id,
                 timezone: $timezone,
                 reason: $reason,
-                from: $hasOneTime ? new \DateTimeImmutable((string) $from) : null,
-                to: $hasOneTime ? new \DateTimeImmutable((string) $to) : null,
-                cronExpression: $hasRecurring ? (string) $cron : null,
-                durationMinutes: $hasRecurring ? (int) $duration : null,
+                from: $from !== null ? new \DateTimeImmutable($from) : null,
+                to:   $to   !== null ? new \DateTimeImmutable($to)   : null,
+                cronExpression: $cron,
+                durationMinutes: $duration !== null ? (int) $duration : null,
                 announceBeforeMinutes: $announceBeforeMinutes,
                 scope: $scope,
             );

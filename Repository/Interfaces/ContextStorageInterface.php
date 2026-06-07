@@ -14,6 +14,9 @@ interface ContextStorageInterface
      *   expected_end_at: ?string,
      *   activated_by_health_check_failure: bool,
      *   activated_by_history_record_id: ?int,
+     *   expires_at: ?string,
+     *   original_ttl_minutes: ?int,
+     *   warning_emitted_at: ?string,
      *   scope?: ?array{path_prefixes: string[], site_ids: int[]},
      * }
      */
@@ -26,6 +29,15 @@ interface ContextStorageInterface
         ?string $expectedEndAt = null,
         bool $activatedByHealthCheckFailure = false,
         ?int $activatedByHistoryRecordId = null,
+        ?string $expiresAt = null,
+        ?int $originalTtlMinutes = null,
+        ?string $warningEmittedAt = null,
+    ): void;
+
+    public function updateExpiry(
+        ?string $expiresAt,
+        ?int $originalTtlMinutes,
+        ?string $warningEmittedAt,
     ): void;
 
     public function clear(): void;
