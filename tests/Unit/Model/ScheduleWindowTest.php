@@ -6,12 +6,16 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Model;
 
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
+use InvalidArgumentException;
 
 final class ScheduleWindowTest extends TestCase
 {
-    private function utc(string $iso): \DateTimeImmutable
+    private function utc(string $iso): DateTimeImmutable
     {
-        return new \DateTimeImmutable($iso, new \DateTimeZone('UTC'));
+        return new DateTimeImmutable($iso, new DateTimeZone('UTC'));
     }
 
     public function testOneTimeIsActiveWhenNowIsBetweenFromAndTo(): void
@@ -82,7 +86,7 @@ final class ScheduleWindowTest extends TestCase
 
         $end = $w->computeExpectedEndAt($this->utc('2026-06-02T02:30:00Z'));
         self::assertNotNull($end);
-        self::assertSame('2026-06-02T03:00:00+00:00', $end->format(\DateTimeInterface::ATOM));
+        self::assertSame('2026-06-02T03:00:00+00:00', $end->format(DateTimeInterface::ATOM));
     }
 
     public function testCreatedByFieldsAreStored(): void
@@ -95,16 +99,21 @@ final class ScheduleWindowTest extends TestCase
 
     public function testInvalidInvariantThrowsOnBothSetsNull(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         new ScheduleWindow('w3', 'UTC', null, null, null, null, null);
     }
 
     public function testInvalidInvariantThrowsOnBothSetsPopulated(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        new ScheduleWindow('w3', 'UTC', null,
-            $this->utc('2026-06-02T02:00:00Z'), $this->utc('2026-06-02T04:00:00Z'),
-            '0 2 * * *', 60
+        $this->expectException(InvalidArgumentException::class);
+        new ScheduleWindow(
+            'w3',
+            'UTC',
+            null,
+            $this->utc('2026-06-02T02:00:00Z'),
+            $this->utc('2026-06-02T04:00:00Z'),
+            '0 2 * * *',
+            60
         );
     }
 }

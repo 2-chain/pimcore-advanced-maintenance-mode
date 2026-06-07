@@ -9,6 +9,7 @@ use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Override;
 
 final class AdminPermissionListener implements EventSubscriberInterface
 {
@@ -16,7 +17,7 @@ final class AdminPermissionListener implements EventSubscriberInterface
 
     public function __construct(private readonly Connection $connection) {}
 
-    #[\Override]
+    #[Override]
     public static function getSubscribedEvents(): array
     {
         return [KernelEvents::REQUEST => ['onKernelRequest', 255]];

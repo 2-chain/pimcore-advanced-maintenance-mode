@@ -7,6 +7,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\HealthCheck;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\HealthCheck\ConsoleCommandCheck;
+use RuntimeException;
 
 final class ConsoleCommandCheckTest extends TestCase
 {
@@ -56,7 +57,7 @@ final class ConsoleCommandCheckTest extends TestCase
             command: 'app:health-check',
             timeoutSeconds: 60,
             processFactory: function (array $cmd, int $timeout): Process {
-                throw new \RuntimeException('Process could not be started');
+                throw new RuntimeException('Process could not be started');
             },
         );
 

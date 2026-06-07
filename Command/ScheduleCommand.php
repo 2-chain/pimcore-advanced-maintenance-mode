@@ -16,6 +16,9 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\OverlapDetector;
+use DateTimeImmutable;
+use DateTimeInterface;
+use Exception;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:schedule',
@@ -34,17 +37,17 @@ final class ScheduleCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('from',     null, InputOption::VALUE_REQUIRED, 'Start datetime (ISO 8601 UTC) for one-time window')
-            ->addOption('to',       null, InputOption::VALUE_REQUIRED, 'End datetime (ISO 8601 UTC) for one-time window')
-            ->addOption('cron',     null, InputOption::VALUE_REQUIRED, 'Cron expression for recurring window')
+            ->addOption('from', null, InputOption::VALUE_REQUIRED, 'Start datetime (ISO 8601 UTC) for one-time window')
+            ->addOption('to', null, InputOption::VALUE_REQUIRED, 'End datetime (ISO 8601 UTC) for one-time window')
+            ->addOption('cron', null, InputOption::VALUE_REQUIRED, 'Cron expression for recurring window')
             ->addOption('duration', null, InputOption::VALUE_REQUIRED, 'Duration in minutes for recurring window')
-            ->addOption('reason',   null, InputOption::VALUE_REQUIRED, 'Human-readable reason shown during maintenance')
+            ->addOption('reason', null, InputOption::VALUE_REQUIRED, 'Human-readable reason shown during maintenance')
             ->addOption('timezone', null, InputOption::VALUE_REQUIRED, 'PHP timezone identifier', \ini_get('date.timezone') ?: 'UTC')
             ->addOption('announce-before', null, InputOption::VALUE_REQUIRED, 'Minutes before start to show pre-announce banner (0 = use config default)', 0)
-            ->addOption('id',       null, InputOption::VALUE_REQUIRED, 'Window ID (auto-generated if omitted)')
-            ->addOption('dry-run',  null, InputOption::VALUE_NONE,     'Validate and show what would be scheduled without persisting')
+            ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Window ID (auto-generated if omitted)')
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Validate and show what would be scheduled without persisting')
             ->addOption('path-prefix', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict this window to URL path prefix (repeatable)')
-            ->addOption('site-id',     null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict this window to Pimcore site ID (repeatable)');
+            ->addOption('site-id', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict this window to Pimcore site ID (repeatable)');
     }
 
     #[Override]
@@ -101,14 +104,14 @@ final class ScheduleCommand extends Command
                 id: $id,
                 timezone: $timezone,
                 reason: $reason,
-                from: $from !== null ? new \DateTimeImmutable($from) : null,
-                to:   $to   !== null ? new \DateTimeImmutable($to)   : null,
+                from: $from !== null ? new DateTimeImmutable($from) : null,
+                to: $to   !== null ? new DateTimeImmutable($to) : null,
                 cronExpression: $cron,
                 durationMinutes: $duration !== null ? (int) $duration : null,
                 announceBeforeMinutes: $announceBeforeMinutes,
                 scope: $scope,
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $io->error('Invalid window parameters: ' . $e->getMessage());
             return Command::FAILURE;
         }
@@ -122,8 +125,8 @@ final class ScheduleCommand extends Command
                 $table->addRow([
                     $w->id,
                     $w->isRecurring() ? 'recurring' : 'one-time',
-                    $w->isRecurring() ? $w->cronExpression : $w->from?->format(\DateTimeInterface::ATOM),
-                    $w->isRecurring() ? $w->durationMinutes . 'min' : $w->to?->format(\DateTimeInterface::ATOM),
+                    $w->isRecurring() ? $w->cronExpression : $w->from?->format(DateTimeInterface::ATOM),
+                    $w->isRecurring() ? $w->durationMinutes . 'min' : $w->to?->format(DateTimeInterface::ATOM),
                 ]);
             }
             $table->render();

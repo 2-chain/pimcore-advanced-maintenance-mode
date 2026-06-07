@@ -6,6 +6,10 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Service;
 
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PendingHealthCheckStorage;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
+use Override;
 
 /**
  * Tests PendingHealthCheckStorage using an in-memory fake that bypasses TmpStore.
@@ -83,23 +87,23 @@ final class FakePendingHealthCheckStorage extends PendingHealthCheckStorage
     /** @var array{retry_count: int, triggered_by: string, deactivated_at: string}|null */
     private ?array $data = null;
 
-    #[\Override]
+    #[Override]
     public function write(string $triggeredBy): void
     {
         $this->data = [
             'retry_count'    => 0,
             'triggered_by'   => $triggeredBy,
-            'deactivated_at' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(\DateTimeInterface::ATOM),
+            'deactivated_at' => (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format(DateTimeInterface::ATOM),
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function read(): ?array
     {
         return $this->data;
     }
 
-    #[\Override]
+    #[Override]
     public function incrementRetryCount(): void
     {
         if ($this->data === null) {
@@ -109,7 +113,7 @@ final class FakePendingHealthCheckStorage extends PendingHealthCheckStorage
         $this->data['retry_count']++;
     }
 
-    #[\Override]
+    #[Override]
     public function clear(): void
     {
         $this->data = null;

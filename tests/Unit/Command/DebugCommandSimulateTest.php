@@ -77,14 +77,17 @@ final class DebugCommandSimulateTest extends TestCase
                 mailOnMaintenanceStartRecipients: [],
                 mailOnMaintenanceEndRecipients: [],
                 mailTemplate: null,
-            mailPreAnnounceTemplate: null,
-            mailMaintenanceStartTemplate: null,
-            mailMaintenanceEndTemplate: null,
+                mailPreAnnounceTemplate: null,
+                mailMaintenanceStartTemplate: null,
+                mailMaintenanceEndTemplate: null,
                 notificationWebhooks: [],
             ),
             compiledRules: $rules,
             preAnnounceStorage: new class extends PreAnnounceStorage {
-                public function load(): ?PreAnnounceData { return null; }
+                public function load(): ?PreAnnounceData
+                {
+                    return null;
+                }
             },
         );
     }

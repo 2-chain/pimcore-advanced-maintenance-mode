@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
 
 use Psr\Log\LoggerInterface;
+use DateTimeImmutable;
+use DateTimeZone;
+use Throwable;
 
 class MaintenanceMailNotifier
 {
@@ -67,7 +70,7 @@ class MaintenanceMailNotifier
         $body = \sprintf(
             "Maintenance mode has ended.\n\nTrigger: %s\nTime: %s UTC",
             $trigger,
-            (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s'),
+            (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s'),
         );
         $this->send($recipients, $subject, $body, $template);
     }
@@ -101,7 +104,7 @@ class MaintenanceMailNotifier
                 $mail->addTo($recipient);
             }
             $mail->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->warning('[MaintenanceMailNotifier] Failed to send notification.', [
                 'subject'   => $subject,
                 'exception' => $e->getMessage(),

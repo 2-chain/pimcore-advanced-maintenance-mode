@@ -12,6 +12,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerRenderer;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\PreAnnounceBannerProvider;
+use DateTimeImmutable;
+use DateTimeZone;
 
 final class MaintenanceExtension extends AbstractExtension
 {
@@ -55,13 +57,13 @@ final class MaintenanceExtension extends AbstractExtension
         return $html;
     }
 
-    public function maintenancePreAnnounceAt(): ?\DateTimeImmutable
+    public function maintenancePreAnnounceAt(): ?DateTimeImmutable
     {
         return $this->provider->provide()?->at;
     }
 
     /**
-     * @return array{at: \DateTimeImmutable, atFormatted: string, reason: ?string, secondsRemaining: int, urgencyLevel: string, dismissKey: string, dismissStorage: string, scope: array{global: bool, pathPrefixes: string[], siteIds: int[]}}|null
+     * @return array{at: DateTimeImmutable, atFormatted: string, reason: ?string, secondsRemaining: int, urgencyLevel: string, dismissKey: string, dismissStorage: string, scope: array{global: bool, pathPrefixes: string[], siteIds: int[]}}|null
      */
     public function maintenanceCountdownData(): ?array
     {
@@ -70,7 +72,7 @@ final class MaintenanceExtension extends AbstractExtension
             return null;
         }
 
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $seconds = $data->at->getTimestamp() - $now->getTimestamp();
         $seconds = \max(0, $seconds);
 
@@ -82,7 +84,7 @@ final class MaintenanceExtension extends AbstractExtension
             default             => 'normal',
         };
 
-        $atInTz = $data->at->setTimezone(new \DateTimeZone($data->timezone));
+        $atInTz = $data->at->setTimezone(new DateTimeZone($data->timezone));
 
         return [
             'at'               => $data->at,

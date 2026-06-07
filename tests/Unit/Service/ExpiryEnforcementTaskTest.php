@@ -11,6 +11,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExpiryEnforcementTask;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
+use DateTimeImmutable;
+use DateTimeInterface;
 
 final class ExpiryEnforcementTaskTest extends TestCase
 {
@@ -36,7 +38,10 @@ final class ExpiryEnforcementTaskTest extends TestCase
                 ], $overrides);
             }
 
-            public function load(): array { return $this->state; }
+            public function load(): array
+            {
+                return $this->state;
+            }
 
             public function save(
                 ?string $reason,
@@ -130,7 +135,7 @@ final class ExpiryEnforcementTaskTest extends TestCase
     {
         [$task, $helper] = $this->makeTask(
             isActive: false,
-            storageOverrides: ['expires_at' => (new \DateTimeImmutable('-10 seconds'))->format(\DateTimeInterface::ATOM)],
+            storageOverrides: ['expires_at' => (new DateTimeImmutable('-10 seconds'))->format(DateTimeInterface::ATOM)],
         );
 
         $helper->expects(self::never())->method('deactivate');
@@ -144,7 +149,7 @@ final class ExpiryEnforcementTaskTest extends TestCase
             isActive: true,
             storageOverrides: [
                 'activated_by_schedule_window_id' => 'window-nightly',
-                'expires_at' => (new \DateTimeImmutable('-10 seconds'))->format(\DateTimeInterface::ATOM),
+                'expires_at' => (new DateTimeImmutable('-10 seconds'))->format(DateTimeInterface::ATOM),
             ],
         );
 
@@ -172,7 +177,7 @@ final class ExpiryEnforcementTaskTest extends TestCase
         $helper->expects(self::once())->method('deactivate');
 
         $storage = $this->fakeStorage([
-            'expires_at' => (new \DateTimeImmutable('now UTC'))->modify('-1 second')->format(\DateTimeInterface::ATOM),
+            'expires_at' => (new DateTimeImmutable('now UTC'))->modify('-1 second')->format(DateTimeInterface::ATOM),
         ]);
         $context = new ActivationContext($storage);
         $logger = $this->createMock(LoggerInterface::class);
@@ -193,7 +198,7 @@ final class ExpiryEnforcementTaskTest extends TestCase
         $helper->expects(self::once())->method('deactivate');
 
         $storage = $this->fakeStorage([
-            'expires_at' => (new \DateTimeImmutable('now UTC'))->format(\DateTimeInterface::ATOM),
+            'expires_at' => (new DateTimeImmutable('now UTC'))->format(DateTimeInterface::ATOM),
         ]);
         $context = new ActivationContext($storage);
         $logger = $this->createMock(LoggerInterface::class);
@@ -210,9 +215,9 @@ final class ExpiryEnforcementTaskTest extends TestCase
         $helper->method('isActive')->willReturn(true);
         $helper->expects(self::never())->method('deactivate');
 
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+5 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+5 minutes');
         $storage = $this->fakeStorage([
-            'expires_at'           => $expiresAt->format(\DateTimeInterface::ATOM),
+            'expires_at'           => $expiresAt->format(DateTimeInterface::ATOM),
             'original_ttl_minutes' => 60,
             'warning_emitted_at'   => null,
         ]);
@@ -233,12 +238,12 @@ final class ExpiryEnforcementTaskTest extends TestCase
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(true);
 
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+5 minutes');
-        $warnedAt  = (new \DateTimeImmutable('now UTC'))->modify('-2 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+5 minutes');
+        $warnedAt  = (new DateTimeImmutable('now UTC'))->modify('-2 minutes');
         $storage = $this->fakeStorage([
-            'expires_at'           => $expiresAt->format(\DateTimeInterface::ATOM),
+            'expires_at'           => $expiresAt->format(DateTimeInterface::ATOM),
             'original_ttl_minutes' => 60,
-            'warning_emitted_at'   => $warnedAt->format(\DateTimeInterface::ATOM),
+            'warning_emitted_at'   => $warnedAt->format(DateTimeInterface::ATOM),
         ]);
         $context = new ActivationContext($storage);
 
@@ -256,9 +261,9 @@ final class ExpiryEnforcementTaskTest extends TestCase
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(true);
 
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+5 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+5 minutes');
         $storage = $this->fakeStorage([
-            'expires_at' => $expiresAt->format(\DateTimeInterface::ATOM),
+            'expires_at' => $expiresAt->format(DateTimeInterface::ATOM),
         ]);
         $context = new ActivationContext($storage);
 
@@ -275,9 +280,9 @@ final class ExpiryEnforcementTaskTest extends TestCase
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(true);
 
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+30 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+30 minutes');
         $storage = $this->fakeStorage([
-            'expires_at' => $expiresAt->format(\DateTimeInterface::ATOM),
+            'expires_at' => $expiresAt->format(DateTimeInterface::ATOM),
         ]);
         $context = new ActivationContext($storage);
 

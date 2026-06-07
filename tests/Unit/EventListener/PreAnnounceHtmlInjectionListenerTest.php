@@ -14,6 +14,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerRenderer;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\PreAnnounceBannerProvider;
+use DateTimeImmutable;
 
 final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 {
@@ -48,20 +49,29 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 
     private function makeProvider(?PreAnnounceData $data, bool $alreadyRendered = false): PreAnnounceBannerProvider
     {
-        return new class($data, $alreadyRendered) extends PreAnnounceBannerProvider {
+        return new class ($data, $alreadyRendered) extends PreAnnounceBannerProvider {
             public function __construct(
                 private readonly ?PreAnnounceData $mockData,
                 private bool $mockRendered,
             ) {}
-            public function provide(): ?PreAnnounceData { return $this->mockData; }
-            public function wasRendered(): bool { return $this->mockRendered; }
-            public function markRendered(): void { $this->mockRendered = true; }
+            public function provide(): ?PreAnnounceData
+            {
+                return $this->mockData;
+            }
+            public function wasRendered(): bool
+            {
+                return $this->mockRendered;
+            }
+            public function markRendered(): void
+            {
+                $this->mockRendered = true;
+            }
         };
     }
 
     private function makeRenderer(?string &$capturedNonce = null): PreAnnounceBannerRenderer
     {
-        return new class($capturedNonce) extends PreAnnounceBannerRenderer {
+        return new class ($capturedNonce) extends PreAnnounceBannerRenderer {
             public function __construct(private mixed &$capture) {}
             public function render(PreAnnounceData $data, ?string $nonce = null): string
             {
@@ -86,7 +96,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 
     public function testInjectsBannerBeforeClosingBody(): void
     {
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(true),
             $this->makeProvider($data),
@@ -100,7 +110,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 
     public function testSkipsWhenAutoInjectDisabled(): void
     {
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(false),
             $this->makeProvider($data),
@@ -114,7 +124,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 
     public function testSkipsNonHtmlResponse(): void
     {
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(true),
             $this->makeProvider($data),
@@ -128,7 +138,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 
     public function testSkipsSubRequest(): void
     {
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(true),
             $this->makeProvider($data),
@@ -142,7 +152,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
 
     public function testSkipsWhenAlreadyRendered(): void
     {
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(true),
             $this->makeProvider($data, alreadyRendered: true),
@@ -170,7 +180,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
     public function testInjectsBeforeLastBodyTag(): void
     {
         // Two </body> tags — must replace last one only
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(true),
             $this->makeProvider($data),
@@ -187,7 +197,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
     public function testExtractsNonceFromCspAndPassesToRenderer(): void
     {
         $capturedNonce = null;
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(true),
             $this->makeProvider($data),
@@ -208,7 +218,7 @@ final class PreAnnounceHtmlInjectionListenerTest extends TestCase
     public function testPassesNullNonceWhenNoCspHeader(): void
     {
         $capturedNonce = 'initial';
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         $listener = new PreAnnounceHtmlInjectionListener(
             $this->makeConfig(true),
             $this->makeProvider($data),

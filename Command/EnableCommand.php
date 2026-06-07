@@ -18,6 +18,9 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifie
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:enable',
@@ -46,7 +49,7 @@ final class EnableCommand extends Command
             ->addOption('session-id', null, InputOption::VALUE_REQUIRED, "Activator session id (defaults to 'command-line-dummy-session-id')")
             ->addOption('expires-in', null, InputOption::VALUE_REQUIRED, 'TTL in minutes; maintenance auto-disables after this duration')
             ->addOption('path-prefix', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict maintenance to URL path prefix (repeatable)')
-            ->addOption('site-id',     null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict maintenance to Pimcore site ID (repeatable)');
+            ->addOption('site-id', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Restrict maintenance to Pimcore site ID (repeatable)');
     }
 
     #[Override]
@@ -91,8 +94,8 @@ final class EnableCommand extends Command
 
         $expiresAtStr = null;
         if ($ttlMinutes !== null) {
-            $expiresAt = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify(\sprintf('+%d minutes', $ttlMinutes));
-            $expiresAtStr = $expiresAt->format(\DateTimeInterface::ATOM);
+            $expiresAt = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify(\sprintf('+%d minutes', $ttlMinutes));
+            $expiresAtStr = $expiresAt->format(DateTimeInterface::ATOM);
         }
 
         // Resolve scope: CLI options take precedence, then YAML default, then null (global).
@@ -141,7 +144,7 @@ final class EnableCommand extends Command
             $output->writeln(\sprintf('Retry-After: %ds', $retryAfter));
         }
         if ($ttlMinutes !== null && $expiresAtStr !== null) {
-            $dt = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $expiresAtStr);
+            $dt = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $expiresAtStr);
             \assert($dt !== false);
             $output->writeln(\sprintf(
                 'Expires at:  %s (%d min)',

@@ -11,6 +11,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\HeartbeatCommand;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
+use DateTimeImmutable;
+use DateTimeInterface;
 
 final class HeartbeatCommandTest extends TestCase
 {
@@ -35,7 +37,10 @@ final class HeartbeatCommandTest extends TestCase
                 ], $overrides);
             }
 
-            public function load(): array { return $this->state; }
+            public function load(): array
+            {
+                return $this->state;
+            }
 
             public function save(
                 ?string $reason,
@@ -97,7 +102,7 @@ final class HeartbeatCommandTest extends TestCase
     {
         [$command] = $this->makeCommand(isActive: true, storageOverrides: [
             'activated_by_schedule_window_id' => 'window-nightly',
-            'expires_at' => (new \DateTimeImmutable('+60 minutes UTC'))->format(\DateTimeInterface::ATOM),
+            'expires_at' => (new DateTimeImmutable('+60 minutes UTC'))->format(DateTimeInterface::ATOM),
         ]);
         $tester = new CommandTester($command);
 
@@ -123,10 +128,10 @@ final class HeartbeatCommandTest extends TestCase
 
     public function testRenewsExistingTtl(): void
     {
-        $before = new \DateTimeImmutable('now UTC');
+        $before = new DateTimeImmutable('now UTC');
 
         [$command, $storage] = $this->makeCommand(isActive: true, storageOverrides: [
-            'expires_at'           => (new \DateTimeImmutable('+5 minutes UTC'))->format(\DateTimeInterface::ATOM),
+            'expires_at'           => (new DateTimeImmutable('+5 minutes UTC'))->format(DateTimeInterface::ATOM),
             'original_ttl_minutes' => 60,
         ]);
         $tester = new CommandTester($command);
@@ -138,7 +143,7 @@ final class HeartbeatCommandTest extends TestCase
         self::assertSame(60, $storage->lastUpdateExpiry['original_ttl_minutes']);
         self::assertNull($storage->lastUpdateExpiry['warning_emitted_at']);
 
-        $newExpiry = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $storage->lastUpdateExpiry['expires_at']);
+        $newExpiry = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $storage->lastUpdateExpiry['expires_at']);
         self::assertNotFalse($newExpiry);
         $expectedMin = $before->modify('+60 minutes')->getTimestamp();
         self::assertGreaterThanOrEqual($expectedMin - 5, $newExpiry->getTimestamp());
@@ -153,7 +158,7 @@ final class HeartbeatCommandTest extends TestCase
     public function testExpiresInFlagOverridesTtl(): void
     {
         [$command, $storage] = $this->makeCommand(isActive: true, storageOverrides: [
-            'expires_at'           => (new \DateTimeImmutable('+5 minutes UTC'))->format(\DateTimeInterface::ATOM),
+            'expires_at'           => (new DateTimeImmutable('+5 minutes UTC'))->format(DateTimeInterface::ATOM),
             'original_ttl_minutes' => 60,
         ]);
         $tester = new CommandTester($command);
@@ -183,7 +188,7 @@ final class HeartbeatCommandTest extends TestCase
     public function testExpiresInMustBePositive(): void
     {
         [$command] = $this->makeCommand(isActive: true, storageOverrides: [
-            'expires_at'           => (new \DateTimeImmutable('+5 minutes UTC'))->format(\DateTimeInterface::ATOM),
+            'expires_at'           => (new DateTimeImmutable('+5 minutes UTC'))->format(DateTimeInterface::ATOM),
             'original_ttl_minutes' => 60,
         ]);
         $tester = new CommandTester($command);

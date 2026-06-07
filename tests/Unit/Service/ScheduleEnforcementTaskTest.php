@@ -15,26 +15,41 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ScheduleEnforcementTask;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Repository\Fixtures\InMemoryScheduleHistoryRepository;
+use DateTimeImmutable;
+use DateTimeZone;
+use Override;
 
 final class ScheduleEnforcementTaskTest extends TestCase
 {
-    private function utc(string $iso): \DateTimeImmutable
+    private function utc(string $iso): DateTimeImmutable
     {
-        return new \DateTimeImmutable($iso, new \DateTimeZone('UTC'));
+        return new DateTimeImmutable($iso, new DateTimeZone('UTC'));
     }
 
     private function activeOneTimeWindow(string $id): ScheduleWindow
     {
-        return new ScheduleWindow($id, 'UTC', 'deploy',
-            $this->utc('2026-06-02T00:00:00Z'), $this->utc('2026-06-02T23:59:59Z'),
-            null, null);
+        return new ScheduleWindow(
+            $id,
+            'UTC',
+            'deploy',
+            $this->utc('2026-06-02T00:00:00Z'),
+            $this->utc('2026-06-02T23:59:59Z'),
+            null,
+            null
+        );
     }
 
     private function expiredOneTimeWindow(string $id): ScheduleWindow
     {
-        return new ScheduleWindow($id, 'UTC', 'old',
-            $this->utc('2026-06-01T00:00:00Z'), $this->utc('2026-06-01T01:00:00Z'),
-            null, null);
+        return new ScheduleWindow(
+            $id,
+            'UTC',
+            'old',
+            $this->utc('2026-06-01T00:00:00Z'),
+            $this->utc('2026-06-01T01:00:00Z'),
+            null,
+            null
+        );
     }
 
     private function makeConfig(?array $defaultScopeData = null): BundleConfiguration
@@ -174,7 +189,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
 
     public function testCaseAInsertsHistoryRecord(): void
     {
-        $now    = new \DateTimeImmutable('2026-06-02T10:00:00Z', new \DateTimeZone('UTC'));
+        $now    = new DateTimeImmutable('2026-06-02T10:00:00Z', new DateTimeZone('UTC'));
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::once())->method('activate');
@@ -198,7 +213,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
 
     public function testCaseASkipsWindowWhenSkipStorageSaysSkip(): void
     {
-        $now    = new \DateTimeImmutable('2026-06-02T12:00:00Z', new \DateTimeZone('UTC'));
+        $now    = new DateTimeImmutable('2026-06-02T12:00:00Z', new DateTimeZone('UTC'));
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::never())->method('activate');
@@ -220,7 +235,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
 
     public function testCaseBUpdatesHistoryRecord(): void
     {
-        $now    = new \DateTimeImmutable('2026-06-02T11:00:00Z', new \DateTimeZone('UTC'));
+        $now    = new DateTimeImmutable('2026-06-02T11:00:00Z', new DateTimeZone('UTC'));
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(true);
         $helper->expects(self::once())->method('deactivate');
@@ -246,16 +261,24 @@ final class ScheduleEnforcementTaskTest extends TestCase
 
     public function testCaseAScopedWindowStoresScopeInContext(): void
     {
-        $now    = new \DateTimeImmutable('2026-06-02T12:00:00Z', new \DateTimeZone('UTC'));
+        $now    = new DateTimeImmutable('2026-06-02T12:00:00Z', new DateTimeZone('UTC'));
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::once())->method('activate');
 
         $scope  = new MaintenanceScope(['/shop'], [2]);
         $window = new ScheduleWindow(
-            'w-scoped', 'UTC', 'deploy',
-            $this->utc('2026-06-02T00:00:00Z'), $this->utc('2026-06-02T23:59:59Z'),
-            null, null, 0, 0, '', $scope,
+            'w-scoped',
+            'UTC',
+            'deploy',
+            $this->utc('2026-06-02T00:00:00Z'),
+            $this->utc('2026-06-02T23:59:59Z'),
+            null,
+            null,
+            0,
+            0,
+            '',
+            $scope,
         );
 
         $storage = $this->createStub(ScheduleStorage::class);
@@ -273,7 +296,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
 
     public function testCaseANullWindowScopeUsesYamlDefault(): void
     {
-        $now    = new \DateTimeImmutable('2026-06-02T12:00:00Z', new \DateTimeZone('UTC'));
+        $now    = new DateTimeImmutable('2026-06-02T12:00:00Z', new DateTimeZone('UTC'));
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::once())->method('activate');
@@ -294,7 +317,7 @@ final class ScheduleEnforcementTaskTest extends TestCase
 
     public function testCaseANullWindowScopeNoYamlDefaultStoresNullScope(): void
     {
-        $now    = new \DateTimeImmutable('2026-06-02T12:00:00Z', new \DateTimeZone('UTC'));
+        $now    = new DateTimeImmutable('2026-06-02T12:00:00Z', new DateTimeZone('UTC'));
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(false);
         $helper->expects(self::once())->method('activate');
@@ -320,7 +343,7 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
     public ?int $historyRecordId = null;
     public ?array $scopeRaw = null;
 
-    #[\Override]
+    #[Override]
     public function load(): array
     {
         return [
@@ -337,7 +360,7 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function save(
         ?string $reason,
         ?int $retryAfter,
@@ -353,14 +376,14 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
         $this->historyRecordId = $activatedByHistoryRecordId;
     }
 
-    #[\Override]
+    #[Override]
     public function updateExpiry(
         ?string $expiresAt,
         ?int $originalTtlMinutes,
         ?string $warningEmittedAt,
     ): void {}
 
-    #[\Override]
+    #[Override]
     public function clear(): void
     {
         $this->windowId = null;
@@ -368,7 +391,7 @@ final class InMemoryContextStorageForTask implements \TwoChain\PimcoreAdvancedMa
         $this->scopeRaw = null;
     }
 
-    #[\Override]
+    #[Override]
     public function saveScope(?array $scopeRaw): void
     {
         $this->scopeRaw = $scopeRaw;
@@ -380,11 +403,17 @@ final class InMemorySkipStorage extends \TwoChain\PimcoreAdvancedMaintenanceMode
 {
     private array $store = [];
 
-    #[\Override]
-    protected function loadMap(): array { return $this->store; }
+    #[Override]
+    protected function loadMap(): array
+    {
+        return $this->store;
+    }
 
-    #[\Override]
-    protected function saveMap(array $map): void { $this->store = $map; }
+    #[Override]
+    protected function saveMap(array $map): void
+    {
+        $this->store = $map;
+    }
 }
 
 // Inline fake for QueuedWindowStorage (final class — cannot be mocked or extended)
@@ -393,13 +422,13 @@ final class InMemoryQueuedWindowStorage implements \TwoChain\PimcoreAdvancedMain
     /** @var string[] */
     private array $ids = [];
 
-    #[\Override]
+    #[Override]
     public function all(): array
     {
         return $this->ids;
     }
 
-    #[\Override]
+    #[Override]
     public function enqueue(string $windowId): void
     {
         if (!\in_array($windowId, $this->ids, true)) {
@@ -407,7 +436,7 @@ final class InMemoryQueuedWindowStorage implements \TwoChain\PimcoreAdvancedMain
         }
     }
 
-    #[\Override]
+    #[Override]
     public function dequeueEarliest(): ?string
     {
         if ($this->ids === []) {
@@ -416,19 +445,19 @@ final class InMemoryQueuedWindowStorage implements \TwoChain\PimcoreAdvancedMain
         return \array_shift($this->ids);
     }
 
-    #[\Override]
+    #[Override]
     public function remove(string $windowId): void
     {
         $this->ids = \array_values(\array_filter($this->ids, static fn(string $id) => $id !== $windowId));
     }
 
-    #[\Override]
+    #[Override]
     public function isEmpty(): bool
     {
         return $this->ids === [];
     }
 
-    #[\Override]
+    #[Override]
     public function clear(): void
     {
         $this->ids = [];

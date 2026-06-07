@@ -9,6 +9,9 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
+use DateTimeZone;
+use Throwable;
 
 class PreAnnounceBannerProvider
 {
@@ -27,7 +30,7 @@ class PreAnnounceBannerProvider
             return null;
         }
 
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $candidates = [];
 
         // (a) Manual pre-announcement
@@ -100,9 +103,9 @@ class PreAnnounceBannerProvider
         return $perEntryMinutes ?? $this->config->defaultThresholdMinutes ?? 60;
     }
 
-    private function resolveNextStart(object $window, \DateTimeImmutable $now): ?\DateTimeImmutable
+    private function resolveNextStart(object $window, DateTimeImmutable $now): ?DateTimeImmutable
     {
-        if (\property_exists($window, 'from') && $window->from instanceof \DateTimeImmutable) {
+        if (\property_exists($window, 'from') && $window->from instanceof DateTimeImmutable) {
             return $window->from;
         }
         if (\property_exists($window, 'cronExpression')
@@ -113,8 +116,8 @@ class PreAnnounceBannerProvider
             try {
                 $cron = new \Cron\CronExpression($window->cronExpression);
                 $next = $cron->getNextRunDate($now->format('Y-m-d H:i:s'), 0, false, 'UTC');
-                return \DateTimeImmutable::createFromMutable($next);
-            } catch (\Throwable) {
+                return DateTimeImmutable::createFromMutable($next);
+            } catch (Throwable) {
                 return null;
             }
         }

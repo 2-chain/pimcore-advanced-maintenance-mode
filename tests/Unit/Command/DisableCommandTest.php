@@ -35,7 +35,10 @@ final class DisableCommandTest extends TestCase
                 'warning_emitted_at'                => null,
             ];
 
-            public function load(): array { return $this->state; }
+            public function load(): array
+            {
+                return $this->state;
+            }
 
             public function save(
                 ?string $reason,

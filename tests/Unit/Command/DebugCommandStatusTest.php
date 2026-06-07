@@ -22,6 +22,9 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatche
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\IpRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 
 final class DebugCommandStatusTest extends TestCase
 {
@@ -43,12 +46,20 @@ final class DebugCommandStatusTest extends TestCase
                     'warning_emitted_at'                => null,
                 ], $overrides);
             }
-            public function load(): array { return $this->state; }
+            public function load(): array
+            {
+                return $this->state;
+            }
             public function save(
-                ?string $reason, ?int $retryAfter,
-                ?string $activatedByScheduleWindowId = null, ?string $expectedEndAt = null,
-                bool $activatedByHealthCheckFailure = false, ?int $activatedByHistoryRecordId = null,
-                ?string $expiresAt = null, ?int $originalTtlMinutes = null, ?string $warningEmittedAt = null,
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null,
+                ?int $originalTtlMinutes = null,
+                ?string $warningEmittedAt = null,
             ): void {}
             public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
             public function saveScope(?array $scopeRaw): void {}
@@ -72,7 +83,10 @@ final class DebugCommandStatusTest extends TestCase
         );
 
         $preAnnounceStorage ??= new class extends PreAnnounceStorage {
-            public function load(): ?PreAnnounceData { return null; }
+            public function load(): ?PreAnnounceData
+            {
+                return null;
+            }
         };
 
         return new DebugCommand(
@@ -148,9 +162,9 @@ final class DebugCommandStatusTest extends TestCase
 
     public function testStatusOutputShowsPreAnnouncement(): void
     {
-        $at = new \DateTimeImmutable('+2 hours', new \DateTimeZone('UTC'));
-        $preAnnounceStorage = new class($at) extends PreAnnounceStorage {
-            public function __construct(private readonly \DateTimeImmutable $at) {}
+        $at = new DateTimeImmutable('+2 hours', new DateTimeZone('UTC'));
+        $preAnnounceStorage = new class ($at) extends PreAnnounceStorage {
+            public function __construct(private readonly DateTimeImmutable $at) {}
             public function load(): ?PreAnnounceData
             {
                 return new PreAnnounceData($this->at, 'UTC', 'Deployment', null);
@@ -182,13 +196,13 @@ final class DebugCommandStatusTest extends TestCase
 
     public function testTtlLineShownWithRemainingMinutes(): void
     {
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+47 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+47 minutes');
 
         $tester = new CommandTester($this->makeCommand(
             isActive: true,
             rules: [],
             storageOverrides: [
-                'expires_at'                      => $expiresAt->format(\DateTimeInterface::ATOM),
+                'expires_at'                      => $expiresAt->format(DateTimeInterface::ATOM),
                 'activated_by_schedule_window_id' => null,
             ],
         ));
@@ -211,12 +225,12 @@ final class DebugCommandStatusTest extends TestCase
 
     public function testTtlLineOmittedWhenScheduleManaged(): void
     {
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+30 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+30 minutes');
         $tester = new CommandTester($this->makeCommand(
             isActive: true,
             rules: [],
             storageOverrides: [
-                'expires_at'                      => $expiresAt->format(\DateTimeInterface::ATOM),
+                'expires_at'                      => $expiresAt->format(DateTimeInterface::ATOM),
                 'activated_by_schedule_window_id' => 'window-nightly',
             ],
         ));

@@ -11,6 +11,8 @@ use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
+use DateTimeImmutable;
+use DateTimeZone;
 
 final class ConsoleExemptionListener implements EventSubscriberInterface
 {
@@ -78,7 +80,7 @@ final class ConsoleExemptionListener implements EventSubscriberInterface
             $this->context->getActivatedByScheduleWindowId() === null
             && ($expiresAt = $this->context->getExpiresAt()) !== null
         ) {
-            $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+            $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
             $secondsRemaining = $expiresAt->getTimestamp() - $now->getTimestamp();
             $minutesRemaining = (int) \ceil($secondsRemaining / 60);
             $out->writeln(\sprintf(

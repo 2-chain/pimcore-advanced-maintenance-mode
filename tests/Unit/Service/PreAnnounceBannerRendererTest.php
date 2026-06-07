@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerRenderer;
+use DateTimeImmutable;
 
 final class PreAnnounceBannerRendererTest extends TestCase
 {
@@ -43,7 +44,7 @@ final class PreAnnounceBannerRendererTest extends TestCase
     private function makeData(string $reason = 'DB migration'): PreAnnounceData
     {
         return new PreAnnounceData(
-            at: new \DateTimeImmutable('2026-07-01T10:00:00Z'),
+            at: new DateTimeImmutable('2026-07-01T10:00:00Z'),
             timezone: 'Europe/Berlin',
             reason: $reason,
             announceBeforeMinutes: null,
@@ -89,7 +90,7 @@ final class PreAnnounceBannerRendererTest extends TestCase
     public function testRenderContainsDismissKey(): void
     {
         $renderer = new PreAnnounceBannerRenderer($this->makeConfig());
-        $at = new \DateTimeImmutable('2026-07-01T10:00:00Z');
+        $at = new DateTimeImmutable('2026-07-01T10:00:00Z');
         $html = $renderer->render(new PreAnnounceData($at, 'UTC', null, null));
         self::assertStringContainsString('data-dismiss-key="amm_dismissed_' . $at->getTimestamp() . '"', $html);
     }

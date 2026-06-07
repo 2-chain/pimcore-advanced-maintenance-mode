@@ -7,12 +7,14 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Service;
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\OverlapDetector;
+use DateTimeImmutable;
+use DateTimeZone;
 
 final class OverlapDetectorTest extends TestCase
 {
-    private function utc(string $iso): \DateTimeImmutable
+    private function utc(string $iso): DateTimeImmutable
     {
-        return new \DateTimeImmutable($iso, new \DateTimeZone('UTC'));
+        return new DateTimeImmutable($iso, new DateTimeZone('UTC'));
     }
 
     private function ot(string $id, string $from, string $to): ScheduleWindow

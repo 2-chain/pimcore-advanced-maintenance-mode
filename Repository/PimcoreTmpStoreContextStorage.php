@@ -21,7 +21,11 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
             return $this->empty();
         }
 
-        $entry = \Pimcore\Model\Tool\TmpStore::get(self::KEY);
+        try {
+            $entry = \Pimcore\Model\Tool\TmpStore::get(self::KEY);
+        } catch (\Throwable) {
+            return $this->empty();
+        }
         if ($entry === null) {
             return $this->empty();
         }
@@ -61,18 +65,22 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
             return;
         }
 
-        \Pimcore\Model\Tool\TmpStore::set(self::KEY, [
-            'reason'                            => $reason,
-            'retry_after'                       => $retryAfter,
-            'activated_by_schedule_window_id'   => $activatedByScheduleWindowId,
-            'expected_end_at'                   => $expectedEndAt,
-            'activated_by_health_check_failure' => $activatedByHealthCheckFailure,
-            'activated_by_history_record_id'    => $activatedByHistoryRecordId,
-            'expires_at'                        => $expiresAt,
-            'original_ttl_minutes'              => $originalTtlMinutes,
-            'warning_emitted_at'                => $warningEmittedAt,
-            'scope'                             => null,  // scope is always set separately via saveScope() right after
-        ]);
+        try {
+            \Pimcore\Model\Tool\TmpStore::set(self::KEY, [
+                'reason'                            => $reason,
+                'retry_after'                       => $retryAfter,
+                'activated_by_schedule_window_id'   => $activatedByScheduleWindowId,
+                'expected_end_at'                   => $expectedEndAt,
+                'activated_by_health_check_failure' => $activatedByHealthCheckFailure,
+                'activated_by_history_record_id'    => $activatedByHistoryRecordId,
+                'expires_at'                        => $expiresAt,
+                'original_ttl_minutes'              => $originalTtlMinutes,
+                'warning_emitted_at'                => $warningEmittedAt,
+                'scope'                             => null,  // scope is always set separately via saveScope() right after
+            ]);
+        } catch (\Throwable) {
+            // Pimcore not bootstrapped — no-op
+        }
     }
 
     #[Override]
@@ -90,7 +98,11 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
         $current['original_ttl_minutes'] = $originalTtlMinutes;
         $current['warning_emitted_at']   = $warningEmittedAt;
 
-        \Pimcore\Model\Tool\TmpStore::set(self::KEY, $current);
+        try {
+            \Pimcore\Model\Tool\TmpStore::set(self::KEY, $current);
+        } catch (\Throwable) {
+            // Pimcore not bootstrapped — no-op
+        }
     }
 
     #[Override]
@@ -100,7 +112,11 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
             return;
         }
 
-        \Pimcore\Model\Tool\TmpStore::delete(self::KEY);
+        try {
+            \Pimcore\Model\Tool\TmpStore::delete(self::KEY);
+        } catch (\Throwable) {
+            // Pimcore not bootstrapped — no-op
+        }
     }
 
     #[Override]
@@ -110,10 +126,14 @@ final class PimcoreTmpStoreContextStorage implements ContextStorageInterface
             return;
         }
 
-        $entry = \Pimcore\Model\Tool\TmpStore::get(self::KEY);
-        $data  = ($entry !== null && \is_array($entry->getData())) ? $entry->getData() : $this->empty();
-        $data['scope'] = $scopeRaw;
-        \Pimcore\Model\Tool\TmpStore::set(self::KEY, $data);
+        try {
+            $entry = \Pimcore\Model\Tool\TmpStore::get(self::KEY);
+            $data  = ($entry !== null && \is_array($entry->getData())) ? $entry->getData() : $this->empty();
+            $data['scope'] = $scopeRaw;
+            \Pimcore\Model\Tool\TmpStore::set(self::KEY, $data);
+        } catch (\Throwable) {
+            // Pimcore not bootstrapped — no-op
+        }
     }
 
     /** @return ?array{path_prefixes: string[], site_ids: int[]} */

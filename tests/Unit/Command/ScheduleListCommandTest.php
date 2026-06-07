@@ -12,13 +12,18 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
+use DateTimeZone;
 
 final class ScheduleListCommandTest extends TestCase
 {
     private function nullPreAnnounceStorage(): PreAnnounceStorage
     {
         return new class extends PreAnnounceStorage {
-            public function load(): ?PreAnnounceData { return null; }
+            public function load(): ?PreAnnounceData
+            {
+                return null;
+            }
         };
     }
 
@@ -26,10 +31,15 @@ final class ScheduleListCommandTest extends TestCase
     {
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([
-            new ScheduleWindow('w1', 'UTC', 'deploy',
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null),
+            new ScheduleWindow(
+                'w1',
+                'UTC',
+                'deploy',
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null
+            ),
         ]);
 
         $tester = new CommandTester(new ScheduleListCommand($storage, $this->nullPreAnnounceStorage()));
@@ -56,10 +66,14 @@ final class ScheduleListCommandTest extends TestCase
     {
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([
-            new ScheduleWindow('w2', 'UTC', null,
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null,
+            new ScheduleWindow(
+                'w2',
+                'UTC',
+                null,
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null,
                 announceBeforeMinutes: 30,
             ),
         ]);
@@ -75,10 +89,14 @@ final class ScheduleListCommandTest extends TestCase
     {
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([
-            new ScheduleWindow('w3', 'UTC', null,
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null,
+            new ScheduleWindow(
+                'w3',
+                'UTC',
+                null,
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null,
                 announceBeforeMinutes: 0,
             ),
         ]);
@@ -96,10 +114,14 @@ final class ScheduleListCommandTest extends TestCase
     {
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([
-            new ScheduleWindow('w4', 'UTC', null,
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null,
+            new ScheduleWindow(
+                'w4',
+                'UTC',
+                null,
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null,
                 announceBeforeMinutes: 0,
                 createdByUserId: 1,
                 createdByUsername: 'admin',
@@ -117,10 +139,14 @@ final class ScheduleListCommandTest extends TestCase
     {
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([
-            new ScheduleWindow('w5', 'UTC', null,
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null,
+            new ScheduleWindow(
+                'w5',
+                'UTC',
+                null,
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null,
             ),
         ]);
 
@@ -135,10 +161,14 @@ final class ScheduleListCommandTest extends TestCase
     {
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([
-            new ScheduleWindow('w6', 'UTC', null,
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null,
+            new ScheduleWindow(
+                'w6',
+                'UTC',
+                null,
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null,
                 scope: new MaintenanceScope(['/shop'], []),
             ),
         ]);
@@ -154,10 +184,14 @@ final class ScheduleListCommandTest extends TestCase
     {
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([
-            new ScheduleWindow('w7', 'UTC', null,
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null,
+            new ScheduleWindow(
+                'w7',
+                'UTC',
+                null,
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null,
                 scope: new MaintenanceScope([], [2, 3]),
             ),
         ]);
@@ -174,9 +208,9 @@ final class ScheduleListCommandTest extends TestCase
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([]);
 
-        $at = new \DateTimeImmutable('+2 hours', new \DateTimeZone('UTC'));
-        $preAnnounceStorage = new class($at) extends PreAnnounceStorage {
-            public function __construct(private readonly \DateTimeImmutable $at) {}
+        $at = new DateTimeImmutable('+2 hours', new DateTimeZone('UTC'));
+        $preAnnounceStorage = new class ($at) extends PreAnnounceStorage {
+            public function __construct(private readonly DateTimeImmutable $at) {}
             public function load(): ?PreAnnounceData
             {
                 return new PreAnnounceData($this->at, 'UTC', 'Deployment', null);

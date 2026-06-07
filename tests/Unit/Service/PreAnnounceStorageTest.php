@@ -7,6 +7,7 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Service;
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
 
 final class PreAnnounceStorageTest extends TestCase
 {
@@ -16,9 +17,18 @@ final class PreAnnounceStorageTest extends TestCase
         return new class extends PreAnnounceStorage {
             private ?array $stored = null;
 
-            protected function tmpStoreGet(): ?array { return $this->stored; }
-            protected function tmpStoreSet(array $data): void { $this->stored = $data; }
-            protected function tmpStoreClear(): void { $this->stored = null; }
+            protected function tmpStoreGet(): ?array
+            {
+                return $this->stored;
+            }
+            protected function tmpStoreSet(array $data): void
+            {
+                $this->stored = $data;
+            }
+            protected function tmpStoreClear(): void
+            {
+                $this->stored = null;
+            }
         };
     }
 
@@ -26,7 +36,7 @@ final class PreAnnounceStorageTest extends TestCase
     {
         $storage = $this->makeStorage();
         $data = new PreAnnounceData(
-            at: new \DateTimeImmutable('2026-07-01T10:00:00Z'),
+            at: new DateTimeImmutable('2026-07-01T10:00:00Z'),
             timezone: 'Europe/Berlin',
             reason: 'DB migration',
             announceBeforeMinutes: 30,
@@ -51,7 +61,7 @@ final class PreAnnounceStorageTest extends TestCase
     {
         $storage = $this->makeStorage();
         $storage->save(new PreAnnounceData(
-            at: new \DateTimeImmutable('2026-07-01T10:00:00Z'),
+            at: new DateTimeImmutable('2026-07-01T10:00:00Z'),
             timezone: 'UTC',
             reason: null,
             announceBeforeMinutes: null,
@@ -64,7 +74,7 @@ final class PreAnnounceStorageTest extends TestCase
     {
         $storage = $this->makeStorage();
         $storage->save(new PreAnnounceData(
-            at: new \DateTimeImmutable('2026-07-01T10:00:00Z'),
+            at: new DateTimeImmutable('2026-07-01T10:00:00Z'),
             timezone: 'UTC',
             reason: null,
             announceBeforeMinutes: null,

@@ -12,6 +12,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
+use DateTimeZone;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:schedule:list',
@@ -37,7 +39,7 @@ final class ScheduleListCommand extends Command
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $now     = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $now     = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $manual  = $this->preAnnounceStorage->load();
 
         if ($manual !== null && $manual->at > $now) {

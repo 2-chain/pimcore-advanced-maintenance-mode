@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Command;
@@ -8,23 +9,31 @@ use Symfony\Component\Console\Tester\CommandTester;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\PreAnnounceCancelCommand;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
 
 final class PreAnnounceCancelCommandTest extends TestCase
 {
     private function makeStorage(?PreAnnounceData $data): PreAnnounceStorage
     {
-        return new class($data) extends PreAnnounceStorage {
+        return new class ($data) extends PreAnnounceStorage {
             public bool $cleared = false;
             public function __construct(private ?PreAnnounceData $d) {}
-            public function load(): ?PreAnnounceData { return $this->d; }
+            public function load(): ?PreAnnounceData
+            {
+                return $this->d;
+            }
             public function save(PreAnnounceData $d): void {}
-            public function clear(): void { $this->cleared = true; $this->d = null; }
+            public function clear(): void
+            {
+                $this->cleared = true;
+                $this->d = null;
+            }
         };
     }
 
     public function testCancelsExistingAnnouncement(): void
     {
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', 'test', null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', 'test', null);
         $storage = $this->makeStorage($data);
         $tester = new CommandTester(new PreAnnounceCancelCommand($storage));
 

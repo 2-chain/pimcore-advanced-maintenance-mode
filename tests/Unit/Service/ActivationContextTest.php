@@ -8,6 +8,8 @@ use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
+use DateTimeImmutable;
+use DateTimeInterface;
 
 final class ActivationContextTest extends TestCase
 {
@@ -33,7 +35,10 @@ final class ActivationContextTest extends TestCase
                 ], $overrides);
             }
 
-            public function load(): array { return $this->state; }
+            public function load(): array
+            {
+                return $this->state;
+            }
 
             public function save(
                 ?string $reason,
@@ -137,7 +142,7 @@ final class ActivationContextTest extends TestCase
 
         $dt = $ctx->getExpiresAt();
         self::assertNotNull($dt);
-        self::assertSame('2026-06-02T23:00:00+00:00', $dt->format(\DateTimeInterface::ATOM));
+        self::assertSame('2026-06-02T23:00:00+00:00', $dt->format(DateTimeInterface::ATOM));
     }
 
     public function testGetOriginalTtlMinutesReturnsInt(): void
@@ -157,7 +162,7 @@ final class ActivationContextTest extends TestCase
 
         $dt = $ctx->getWarningEmittedAt();
         self::assertNotNull($dt);
-        self::assertSame('2026-06-02T22:00:00+00:00', $dt->format(\DateTimeInterface::ATOM));
+        self::assertSame('2026-06-02T22:00:00+00:00', $dt->format(DateTimeInterface::ATOM));
     }
 
     public function testUpdateExpiryWritesFieldsWithoutTouchingReason(): void
@@ -165,13 +170,13 @@ final class ActivationContextTest extends TestCase
         $storage = $this->fakeStorage(['reason' => 'deploy', 'retry_after' => 300]);
         $ctx = new ActivationContext($storage);
 
-        $expiresAt = new \DateTimeImmutable('2026-06-02T23:00:00+00:00');
+        $expiresAt = new DateTimeImmutable('2026-06-02T23:00:00+00:00');
         $ctx->updateExpiry($expiresAt, 60, null);
 
         self::assertSame(60, $ctx->getOriginalTtlMinutes());
         $stored = $ctx->getExpiresAt();
         self::assertNotNull($stored);
-        self::assertSame('2026-06-02T23:00:00+00:00', $stored->format(\DateTimeInterface::ATOM));
+        self::assertSame('2026-06-02T23:00:00+00:00', $stored->format(DateTimeInterface::ATOM));
         self::assertNull($ctx->getWarningEmittedAt());
 
         self::assertSame('deploy', $ctx->getReason());
@@ -186,16 +191,16 @@ final class ActivationContextTest extends TestCase
         ]);
         $ctx = new ActivationContext($storage);
 
-        $warnedAt = new \DateTimeImmutable('2026-06-02T22:50:00+00:00');
+        $warnedAt = new DateTimeImmutable('2026-06-02T22:50:00+00:00');
         $ctx->updateExpiry(
-            new \DateTimeImmutable('2026-06-02T23:00:00+00:00'),
+            new DateTimeImmutable('2026-06-02T23:00:00+00:00'),
             60,
             $warnedAt,
         );
 
         $result = $ctx->getWarningEmittedAt();
         self::assertNotNull($result);
-        self::assertSame('2026-06-02T22:50:00+00:00', $result->format(\DateTimeInterface::ATOM));
+        self::assertSame('2026-06-02T22:50:00+00:00', $result->format(DateTimeInterface::ATOM));
     }
 
     public function testSetStoresTtlFieldsWhenProvided(): void

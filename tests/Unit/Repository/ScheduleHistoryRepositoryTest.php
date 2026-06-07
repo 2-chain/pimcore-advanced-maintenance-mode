@@ -13,6 +13,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Entity\ScheduleHistoryRecord;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleHistoryRepository;
+use Override;
+use RuntimeException;
 
 final class ScheduleHistoryRepositoryTest extends TestCase
 {
@@ -20,7 +22,7 @@ final class ScheduleHistoryRepositoryTest extends TestCase
     private EntityManagerInterface $em;
     private ScheduleHistoryRepository $repo;
 
-    #[\Override]
+    #[Override]
     protected function setUp(): void
     {
         $this->em   = $this->createMock(EntityManagerInterface::class);
@@ -67,7 +69,7 @@ final class ScheduleHistoryRepositoryTest extends TestCase
     {
         $this->em->expects($this->once())->method('find')->willReturn(null);
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('No history record with id 99 found.');
 
         $this->repo->updateEnd(99, new DateTimeImmutable('2026-06-02T11:00:00Z'));

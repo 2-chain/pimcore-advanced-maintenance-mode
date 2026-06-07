@@ -16,9 +16,18 @@ final class ScheduleCommandTest extends TestCase
     {
         return new class extends ScheduleStorage {
             public array $added = [];
-            protected function tmpStoreAvailable(): bool { return true; }
-            protected function tmpStoreGet(string $key): ?array { return null; }
-            protected function tmpStoreSet(string $key, array $data): void { $this->added = $data; }
+            protected function tmpStoreAvailable(): bool
+            {
+                return true;
+            }
+            protected function tmpStoreGet(string $key): ?array
+            {
+                return null;
+            }
+            protected function tmpStoreSet(string $key, array $data): void
+            {
+                $this->added = $data;
+            }
         };
     }
 

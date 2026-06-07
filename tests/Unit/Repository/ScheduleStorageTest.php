@@ -8,6 +8,8 @@ use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
+use DateTimeImmutable;
+use InvalidArgumentException;
 
 final class ScheduleStorageTest extends TestCase
 {
@@ -17,15 +19,24 @@ final class ScheduleStorageTest extends TestCase
             /** @var array<string, mixed> */
             private array $store = [];
 
-            protected function tmpStoreGet(string $key): ?array { return $this->store[$key] ?? null; }
-            protected function tmpStoreSet(string $key, array $data): void { $this->store[$key] = $data; }
-            protected function tmpStoreAvailable(): bool { return true; }
+            protected function tmpStoreGet(string $key): ?array
+            {
+                return $this->store[$key] ?? null;
+            }
+            protected function tmpStoreSet(string $key, array $data): void
+            {
+                $this->store[$key] = $data;
+            }
+            protected function tmpStoreAvailable(): bool
+            {
+                return true;
+            }
         };
     }
 
     private function oneTimeWindow(string $id): ScheduleWindow
     {
-        return new ScheduleWindow($id, 'UTC', 'test', new \DateTimeImmutable('2026-06-02T02:00:00Z'), new \DateTimeImmutable('2026-06-02T04:00:00Z'), null, null);
+        return new ScheduleWindow($id, 'UTC', 'test', new DateTimeImmutable('2026-06-02T02:00:00Z'), new DateTimeImmutable('2026-06-02T04:00:00Z'), null, null);
     }
 
     public function testAddAndFindAll(): void
@@ -66,7 +77,7 @@ final class ScheduleStorageTest extends TestCase
         $s = $this->storage();
         $s->add($this->oneTimeWindow('win-1'));
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $s->add($this->oneTimeWindow('win-1'));
     }
 
@@ -91,8 +102,8 @@ final class ScheduleStorageTest extends TestCase
             'win-scope',
             'UTC',
             'Scoped maintenance',
-            new \DateTimeImmutable('2026-06-02T02:00:00Z'),
-            new \DateTimeImmutable('2026-06-02T04:00:00Z'),
+            new DateTimeImmutable('2026-06-02T02:00:00Z'),
+            new DateTimeImmutable('2026-06-02T04:00:00Z'),
             null,
             null,
             0,
@@ -117,8 +128,8 @@ final class ScheduleStorageTest extends TestCase
             'win-no-scope',
             'UTC',
             'Global maintenance',
-            new \DateTimeImmutable('2026-06-02T02:00:00Z'),
-            new \DateTimeImmutable('2026-06-02T04:00:00Z'),
+            new DateTimeImmutable('2026-06-02T02:00:00Z'),
+            new DateTimeImmutable('2026-06-02T04:00:00Z'),
             null,
             null,
         );
@@ -136,11 +147,23 @@ final class ScheduleStorageTest extends TestCase
             /** @var array<string, mixed> */
             private array $store = [];
 
-            protected function tmpStoreGet(string $key): ?array { return $this->store[$key] ?? null; }
-            protected function tmpStoreSet(string $key, array $data): void { $this->store[$key] = $data; }
-            protected function tmpStoreAvailable(): bool { return true; }
+            protected function tmpStoreGet(string $key): ?array
+            {
+                return $this->store[$key] ?? null;
+            }
+            protected function tmpStoreSet(string $key, array $data): void
+            {
+                $this->store[$key] = $data;
+            }
+            protected function tmpStoreAvailable(): bool
+            {
+                return true;
+            }
 
-            public function seedRaw(string $key, array $data): void { $this->store[$key] = $data; }
+            public function seedRaw(string $key, array $data): void
+            {
+                $this->store[$key] = $data;
+            }
         };
 
         // Inject a raw payload that has no 'scope' key (legacy format)

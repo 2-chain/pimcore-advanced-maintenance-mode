@@ -70,7 +70,10 @@ final class HttpExemptionListenerTest extends TestCase
         );
 
         $noScopeStorage = new class implements ContextStorageInterface {
-            public function load(): array { return ['reason' => null, 'retry_after' => null, 'scope' => null]; }
+            public function load(): array
+            {
+                return ['reason' => null, 'retry_after' => null, 'scope' => null];
+            }
             public function save(?string $reason, ?int $retryAfter, ?string $activatedByScheduleWindowId = null, ?string $expectedEndAt = null, bool $activatedByHealthCheckFailure = false, ?int $activatedByHistoryRecordId = null, ?string $expiresAt = null, ?int $originalTtlMinutes = null, ?string $warningEmittedAt = null): void {}
             public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
             public function saveScope(?array $scopeRaw): void {}
@@ -78,10 +81,10 @@ final class HttpExemptionListenerTest extends TestCase
         };
 
         return new HttpExemptionListener(
-            helper:        $helper,
-            evaluator:     $evaluator,
+            helper: $helper,
+            evaluator: $evaluator,
             adminDetector: $admin,
-            config:        new BundleConfiguration(
+            config: new BundleConfiguration(
                 bypassAuthenticatedAdmins: $bypassAdmins,
                 defaultRetryAfter: 300,
                 defaultTtl: null,
@@ -106,7 +109,7 @@ final class HttpExemptionListenerTest extends TestCase
                 mailMaintenanceEndTemplate: null,
                 notificationWebhooks: [],
             ),
-            context:       new ActivationContext($noScopeStorage),
+            context: new ActivationContext($noScopeStorage),
         );
     }
 
@@ -252,7 +255,10 @@ final class HttpExemptionListenerTest extends TestCase
         $helper->method('isActive')->willReturn($isActive);
 
         $admin = new class implements AdminSessionDetectorInterface {
-            public function isLoggedInAdmin(Request $request): bool { return false; }
+            public function isLoggedInAdmin(Request $request): bool
+            {
+                return false;
+            }
         };
 
         $evaluator = new ExemptionEvaluator(
@@ -264,7 +270,8 @@ final class HttpExemptionListenerTest extends TestCase
         $scopeForClosure = $scope;
         $storage = new class ($scopeForClosure) implements ContextStorageInterface {
             public function __construct(private readonly ?MaintenanceScope $sc) {}
-            public function load(): array {
+            public function load(): array
+            {
                 return [
                     'reason'      => null,
                     'retry_after' => null,
@@ -281,10 +288,10 @@ final class HttpExemptionListenerTest extends TestCase
         $context = new ActivationContext($storage);
 
         return new HttpExemptionListener(
-            helper:        $helper,
-            evaluator:     $evaluator,
+            helper: $helper,
+            evaluator: $evaluator,
             adminDetector: $admin,
-            config:        new BundleConfiguration(
+            config: new BundleConfiguration(
                 bypassAuthenticatedAdmins: false,
                 defaultRetryAfter: 300,
                 defaultTtl: null,

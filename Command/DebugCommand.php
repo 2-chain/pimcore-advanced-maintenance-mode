@@ -20,6 +20,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ExemptionEvaluator;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider;
+use DateTimeImmutable;
+use DateTimeZone;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:debug',
@@ -109,7 +111,7 @@ final class DebugCommand extends Command
                 if ($expiresAt === null) {
                     $output->writeln('TTL:         not set (indefinite)');
                 } else {
-                    $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+                    $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
                     $secondsRemaining = $expiresAt->getTimestamp() - $now->getTimestamp();
                     $minutesRemaining = (int) \ceil($secondsRemaining / 60);
                     $output->writeln(\sprintf(
@@ -131,7 +133,7 @@ final class DebugCommand extends Command
 
     private function printPreAnnounce(OutputInterface $output): void
     {
-        $now  = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $now  = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $data = $this->preAnnounceStorage->load();
 
         if ($data === null || $data->at <= $now) {

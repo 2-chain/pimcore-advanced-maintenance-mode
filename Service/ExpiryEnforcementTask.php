@@ -9,6 +9,9 @@ use Pimcore\Maintenance\TaskInterface;
 use Pimcore\Tool\MaintenanceModeHelperInterface;
 use Psr\Log\LoggerInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PendingHealthCheckStorage;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 
 final class ExpiryEnforcementTask implements TaskInterface
 {
@@ -39,7 +42,7 @@ final class ExpiryEnforcementTask implements TaskInterface
             return;
         }
 
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $secondsRemaining = $expiresAt->getTimestamp() - $now->getTimestamp();
 
         if ($secondsRemaining <= 0) {
@@ -71,7 +74,7 @@ final class ExpiryEnforcementTask implements TaskInterface
             'Maintenance mode TTL expiring in {minutes_remaining} min at {expires_at}',
             [
                 'minutes_remaining' => $minutesRemaining,
-                'expires_at'        => $expiresAt->format(\DateTimeInterface::ATOM),
+                'expires_at'        => $expiresAt->format(DateTimeInterface::ATOM),
             ],
         );
 

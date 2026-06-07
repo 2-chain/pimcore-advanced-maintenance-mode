@@ -7,6 +7,8 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Unit\Model;
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
+use DateTimeImmutable;
+use Override;
 
 final class ActivationContextTest extends TestCase
 {
@@ -26,9 +28,12 @@ final class ActivationContextTest extends TestCase
                 'scope'                               => null,
             ];
 
-            #[\Override] public function load(): array { return $this->state; }
+            #[Override] public function load(): array
+            {
+                return $this->state;
+            }
 
-            #[\Override] public function save(
+            #[Override] public function save(
                 ?string $reason,
                 ?int $retryAfter,
                 ?string $activatedByScheduleWindowId = null,
@@ -53,7 +58,7 @@ final class ActivationContextTest extends TestCase
                 ];
             }
 
-            #[\Override] public function updateExpiry(
+            #[Override] public function updateExpiry(
                 ?string $expiresAt,
                 ?int $originalTtlMinutes,
                 ?string $warningEmittedAt,
@@ -63,7 +68,7 @@ final class ActivationContextTest extends TestCase
                 $this->state['warning_emitted_at']   = $warningEmittedAt;
             }
 
-            #[\Override] public function clear(): void
+            #[Override] public function clear(): void
             {
                 $this->state = [
                     'reason'                              => null,
@@ -79,7 +84,7 @@ final class ActivationContextTest extends TestCase
                 ];
             }
 
-            #[\Override] public function saveScope(?array $scopeRaw): void {}
+            #[Override] public function saveScope(?array $scopeRaw): void {}
         };
     }
 
@@ -124,7 +129,7 @@ final class ActivationContextTest extends TestCase
     public function testSetWithScheduleWindowFields(): void
     {
         $ctx = new ActivationContext($this->fakeStorage());
-        $end = new \DateTimeImmutable('2026-06-02T03:00:00+00:00');
+        $end = new DateTimeImmutable('2026-06-02T03:00:00+00:00');
 
         $ctx->set('Scheduled DB dump', null, 'win-abc', $end, false);
 
@@ -137,7 +142,7 @@ final class ActivationContextTest extends TestCase
     public function testClearAlsoWipesScheduleFields(): void
     {
         $ctx = new ActivationContext($this->fakeStorage());
-        $ctx->set('x', null, 'win-1', new \DateTimeImmutable('2026-06-02T03:00:00+00:00'));
+        $ctx->set('x', null, 'win-1', new DateTimeImmutable('2026-06-02T03:00:00+00:00'));
 
         $ctx->clear();
 

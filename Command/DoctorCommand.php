@@ -12,6 +12,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
+use Exception;
+use Throwable;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:doctor',
@@ -70,7 +72,7 @@ final class DoctorCommand extends Command
                 $data = $entry?->getData();
                 $ok = \is_array($data) && ($data['ok'] ?? null) === true;
                 $checks[] = ['TmpStore read/write/delete', $ok ? 'ok' : 'fail', ''];
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $checks[] = ['TmpStore read/write/delete', 'fail', $e->getMessage()];
             }
         } else {
@@ -85,7 +87,7 @@ final class DoctorCommand extends Command
             } else {
                 $checks[] = ['DB connection', 'warn', 'Pimcore\\Db not available in this environment'];
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $checks[] = ['DB connection', 'fail', $e->getMessage()];
         }
 
@@ -112,7 +114,7 @@ final class DoctorCommand extends Command
                 if ($w->isRecurring() && $w->cronExpression !== null) {
                     try {
                         new CronExpression($w->cronExpression);
-                    } catch (\Exception) {
+                    } catch (Exception) {
                         $cronErrors[] = $w->id . ': ' . $w->cronExpression;
                     }
                 }
@@ -120,7 +122,7 @@ final class DoctorCommand extends Command
             $checks[] = $cronErrors === []
                 ? ['Stored cron expressions valid', 'ok', '']
                 : ['Stored cron expressions valid', 'fail', \implode(', ', $cronErrors)];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $checks[] = ['Stored cron expressions valid', 'warn', $e->getMessage()];
         }
 

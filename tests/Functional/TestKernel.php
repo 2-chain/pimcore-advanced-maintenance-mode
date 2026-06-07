@@ -31,6 +31,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\InMe
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\InMemoryMaintenanceModeHelper;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\StubAdminSessionDetector;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\TestController;
+use DateTimeImmutable;
 
 final class TestKernel extends Kernel
 {
@@ -280,19 +281,19 @@ final class PimcoreMaintenancePageStub implements EventSubscriberInterface
  */
 final class NullScheduleHistoryRepository implements ScheduleHistoryRepositoryInterface
 {
-    public function insertStart(string $scheduleWindowId, \DateTimeImmutable $startedAt, string $type, ?string $reason, ?int $configuredDurationMinutes, ?array $scopePathPrefixes = null, ?array $scopeSiteIds = null): int
+    public function insertStart(string $scheduleWindowId, DateTimeImmutable $startedAt, string $type, ?string $reason, ?int $configuredDurationMinutes, ?array $scopePathPrefixes = null, ?array $scopeSiteIds = null): int
     {
         return 0;
     }
 
-    public function updateEnd(int $historyId, \DateTimeImmutable $endedAt, ?string $endedReason = null): void {}
+    public function updateEnd(int $historyId, DateTimeImmutable $endedAt, ?string $endedReason = null): void {}
 
     public function findInProgressIdByWindowId(string $windowId): ?int
     {
         return null;
     }
 
-    public function findPaginated(int $page, int $pageSize, ?string $scheduleWindowId = null, ?\DateTimeImmutable $startedAfter = null, ?\DateTimeImmutable $startedBefore = null): array
+    public function findPaginated(int $page, int $pageSize, ?string $scheduleWindowId = null, ?DateTimeImmutable $startedAfter = null, ?DateTimeImmutable $startedBefore = null): array
     {
         return [];
     }

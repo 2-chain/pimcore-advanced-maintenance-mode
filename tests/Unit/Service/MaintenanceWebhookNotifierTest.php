@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
+use DateTimeImmutable;
 
 final class MaintenanceWebhookNotifierTest extends TestCase
 {
@@ -75,7 +76,7 @@ final class MaintenanceWebhookNotifierTest extends TestCase
         $logger = $this->createStub(LoggerInterface::class);
         $notifier = new MaintenanceWebhookNotifier($this->makeConfig(), $logger);
 
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', 'test', null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', 'test', null);
         $notifier->notifyPreAnnounce($data);
 
         // If we get here without exception, the test passes

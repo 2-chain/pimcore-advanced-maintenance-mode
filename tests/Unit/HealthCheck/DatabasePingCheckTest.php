@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Result;
 use PHPUnit\Framework\TestCase;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\HealthCheck\DatabasePingCheck;
+use RuntimeException;
 
 final class DatabasePingCheckTest extends TestCase
 {
@@ -41,7 +42,7 @@ final class DatabasePingCheckTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->expects(self::once())
             ->method('executeQuery')
-            ->willThrowException(new \RuntimeException('Connection refused'));
+            ->willThrowException(new RuntimeException('Connection refused'));
 
         $check = new DatabasePingCheck(connection: $connection, connectionName: 'default');
 

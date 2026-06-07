@@ -23,6 +23,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextS
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\CommandRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\HttpRuleMatcher;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Matcher\IpRuleMatcher;
+use DateTimeImmutable;
+use DateTimeInterface;
 
 final class ConsoleExemptionListenerTest extends TestCase
 {
@@ -56,12 +58,20 @@ final class ConsoleExemptionListenerTest extends TestCase
     {
         $storage = new class ($state) implements ContextStorageInterface {
             public function __construct(private readonly array $state) {}
-            public function load(): array { return $this->state; }
+            public function load(): array
+            {
+                return $this->state;
+            }
             public function save(
-                ?string $reason, ?int $retryAfter,
-                ?string $activatedByScheduleWindowId = null, ?string $expectedEndAt = null,
-                bool $activatedByHealthCheckFailure = false, ?int $activatedByHistoryRecordId = null,
-                ?string $expiresAt = null, ?int $originalTtlMinutes = null, ?string $warningEmittedAt = null,
+                ?string $reason,
+                ?int $retryAfter,
+                ?string $activatedByScheduleWindowId = null,
+                ?string $expectedEndAt = null,
+                bool $activatedByHealthCheckFailure = false,
+                ?int $activatedByHistoryRecordId = null,
+                ?string $expiresAt = null,
+                ?int $originalTtlMinutes = null,
+                ?string $warningEmittedAt = null,
             ): void {}
             public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {}
             public function saveScope(?array $scopeRaw): void {}
@@ -179,7 +189,7 @@ final class ConsoleExemptionListenerTest extends TestCase
 
     public function testTtlExpiryLineAppendedWhenTtlActive(): void
     {
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+47 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+47 minutes');
         $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(true);
         $evaluator = new ExemptionEvaluator(
@@ -194,7 +204,7 @@ final class ConsoleExemptionListenerTest extends TestCase
             'expected_end_at'                   => null,
             'activated_by_health_check_failure' => false,
             'activated_by_history_record_id'    => null,
-            'expires_at'                        => $expiresAt->format(\DateTimeInterface::ATOM),
+            'expires_at'                        => $expiresAt->format(DateTimeInterface::ATOM),
             'original_ttl_minutes'              => 60,
             'warning_emitted_at'                => null,
         ]);
@@ -208,7 +218,7 @@ final class ConsoleExemptionListenerTest extends TestCase
 
     public function testTtlExpiryLineNotAppendedWhenScheduleManaged(): void
     {
-        $expiresAt = (new \DateTimeImmutable('now UTC'))->modify('+30 minutes');
+        $expiresAt = (new DateTimeImmutable('now UTC'))->modify('+30 minutes');
         $helper = $this->createStub(MaintenanceModeHelperInterface::class);
         $helper->method('isActive')->willReturn(true);
         $evaluator = new ExemptionEvaluator(
@@ -223,7 +233,7 @@ final class ConsoleExemptionListenerTest extends TestCase
             'expected_end_at'                   => null,
             'activated_by_health_check_failure' => false,
             'activated_by_history_record_id'    => null,
-            'expires_at'                        => $expiresAt->format(\DateTimeInterface::ATOM),
+            'expires_at'                        => $expiresAt->format(DateTimeInterface::ATOM),
             'original_ttl_minutes'              => 30,
             'warning_emitted_at'                => null,
         ]);

@@ -26,25 +26,34 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector\OverlapDetect
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider;
+use DateTimeImmutable;
+use DateTimeZone;
+use Override;
 
 final class ScheduleApiControllerTest extends TestCase
 {
     private function buildWindow(string $id): ScheduleWindow
     {
         return new ScheduleWindow(
-            $id, 'UTC', null,
-            new \DateTimeImmutable('2026-06-02T10:00:00Z'),
-            new \DateTimeImmutable('2026-06-02T11:00:00Z'),
-            null, null, 0, 1, 'admin',
+            $id,
+            'UTC',
+            null,
+            new DateTimeImmutable('2026-06-02T10:00:00Z'),
+            new DateTimeImmutable('2026-06-02T11:00:00Z'),
+            null,
+            null,
+            0,
+            1,
+            'admin',
         );
     }
 
     private function makeActivationContext(?string $activatedByWindowId = null, ?int $historyRecordId = null): ActivationContext
     {
-        $storage = new class($activatedByWindowId, $historyRecordId) implements ContextStorageInterface {
+        $storage = new class ($activatedByWindowId, $historyRecordId) implements ContextStorageInterface {
             public function __construct(private ?string $windowId, private ?int $historyRecordId) {}
 
-            #[\Override]
+            #[Override]
             public function load(): array
             {
                 return [
@@ -60,7 +69,7 @@ final class ScheduleApiControllerTest extends TestCase
                 ];
             }
 
-            #[\Override]
+            #[Override]
             public function save(
                 ?string $reason,
                 ?int $retryAfter,
@@ -75,20 +84,20 @@ final class ScheduleApiControllerTest extends TestCase
                 $this->windowId = $activatedByScheduleWindowId;
             }
 
-            #[\Override]
+            #[Override]
             public function updateExpiry(
                 ?string $expiresAt,
                 ?int $originalTtlMinutes,
                 ?string $warningEmittedAt,
             ): void {}
 
-            #[\Override]
+            #[Override]
             public function clear(): void
             {
                 $this->windowId = null;
             }
 
-            #[\Override]
+            #[Override]
             public function saveScope(?array $scopeRaw): void {}
         };
 
@@ -141,10 +150,13 @@ final class ScheduleApiControllerTest extends TestCase
         $queuedWindowStorage ??= $this->createStub(QueuedWindowStorageInterface::class);
         $rulesProvider ??= new CompiledRulesProvider([]);
         $preAnnounceStorage ??= new class extends PreAnnounceStorage {
-            public function load(): ?PreAnnounceData { return null; }
+            public function load(): ?PreAnnounceData
+            {
+                return null;
+            }
         };
 
-        return new class(
+        return new class (
             $helper,
             $activationContext,
             $scheduleStorage,
@@ -184,19 +196,19 @@ final class ScheduleApiControllerTest extends TestCase
                 );
             }
 
-            #[\Override]
+            #[Override]
             protected function isAllowedToManage(): bool
             {
                 return $this->allowed;
             }
 
-            #[\Override]
+            #[Override]
             protected function json(mixed $data, int $status = 200, array $headers = [], array $context = []): \Symfony\Component\HttpFoundation\JsonResponse
             {
                 return new \Symfony\Component\HttpFoundation\JsonResponse($data, $status, $headers);
             }
 
-            #[\Override]
+            #[Override]
             protected function getPimcoreUser(bool $proxyUser = false): \Pimcore\Security\User\User|\Pimcore\Model\User|null
             {
                 return null;
@@ -553,9 +565,9 @@ final class ScheduleApiControllerTest extends TestCase
         $storage = $this->createStub(ScheduleStorage::class);
         $storage->method('findAll')->willReturn([]);
 
-        $at = new \DateTimeImmutable('+2 hours', new \DateTimeZone('UTC'));
-        $preAnnounceStorage = new class($at) extends PreAnnounceStorage {
-            public function __construct(private readonly \DateTimeImmutable $at) {}
+        $at = new DateTimeImmutable('+2 hours', new DateTimeZone('UTC'));
+        $preAnnounceStorage = new class ($at) extends PreAnnounceStorage {
+            public function __construct(private readonly DateTimeImmutable $at) {}
             public function load(): ?PreAnnounceData
             {
                 return new PreAnnounceData($this->at, 'UTC', 'Deploy', null);
@@ -572,12 +584,12 @@ final class ScheduleApiControllerTest extends TestCase
 
     private function makeActivationContextWithScope(?MaintenanceScope $scope): ActivationContext
     {
-        $storage = new class($scope) implements ContextStorageInterface {
+        $storage = new class ($scope) implements ContextStorageInterface {
             private ?array $scopeRaw = null;
 
             public function __construct(private readonly ?MaintenanceScope $scope) {}
 
-            #[\Override]
+            #[Override]
             public function load(): array
             {
                 $scopeRaw = $this->scope !== null
@@ -597,7 +609,7 @@ final class ScheduleApiControllerTest extends TestCase
                 ];
             }
 
-            #[\Override]
+            #[Override]
             public function save(
                 ?string $reason,
                 ?int $retryAfter,
@@ -610,17 +622,17 @@ final class ScheduleApiControllerTest extends TestCase
                 ?string $warningEmittedAt = null,
             ): void {}
 
-            #[\Override]
+            #[Override]
             public function updateExpiry(
                 ?string $expiresAt,
                 ?int $originalTtlMinutes,
                 ?string $warningEmittedAt,
             ): void {}
 
-            #[\Override]
+            #[Override]
             public function clear(): void {}
 
-            #[\Override]
+            #[Override]
             public function saveScope(?array $scopeRaw): void
             {
                 $this->scopeRaw = $scopeRaw;
@@ -634,10 +646,16 @@ final class ScheduleApiControllerTest extends TestCase
     {
         $scope  = new MaintenanceScope(['/shop'], [42]);
         $window = new ScheduleWindow(
-            'win-scope', 'UTC', null,
-            new \DateTimeImmutable('2026-06-02T10:00:00Z'),
-            new \DateTimeImmutable('2026-06-02T11:00:00Z'),
-            null, null, 0, 1, 'admin',
+            'win-scope',
+            'UTC',
+            null,
+            new DateTimeImmutable('2026-06-02T10:00:00Z'),
+            new DateTimeImmutable('2026-06-02T11:00:00Z'),
+            null,
+            null,
+            0,
+            1,
+            'admin',
             $scope,
         );
 
@@ -726,7 +744,7 @@ final class ScheduleApiControllerTest extends TestCase
         $scheduleStorage = $this->createStub(ScheduleStorage::class);
         $scheduleStorage->method('findAll')->willReturn([]);
 
-        $controller = new class(
+        $controller = new class (
             $helper,
             $activationContext,
             $scheduleStorage,
@@ -737,19 +755,25 @@ final class ScheduleApiControllerTest extends TestCase
             $this->createStub(QueuedWindowStorageInterface::class),
             new CompiledRulesProvider([]),
             new class extends PreAnnounceStorage {
-                public function load(): ?PreAnnounceData { return null; }
+                public function load(): ?PreAnnounceData
+                {
+                    return null;
+                }
             },
         ) extends ScheduleApiController {
-            #[\Override]
-            protected function isAllowedToManage(): bool { return true; }
+            #[Override]
+            protected function isAllowedToManage(): bool
+            {
+                return true;
+            }
 
-            #[\Override]
+            #[Override]
             protected function json(mixed $data, int $status = 200, array $headers = [], array $context = []): \Symfony\Component\HttpFoundation\JsonResponse
             {
                 return new \Symfony\Component\HttpFoundation\JsonResponse($data, $status, $headers);
             }
 
-            #[\Override]
+            #[Override]
             protected function getPimcoreUser(bool $proxyUser = false): \Pimcore\Security\User\User|\Pimcore\Model\User|null
             {
                 return null;
@@ -802,7 +826,7 @@ final class ScheduleApiControllerTest extends TestCase
 
         $helper = $this->createStub(MaintenanceModeHelperInterface::class);
 
-        $controller = new class(
+        $controller = new class (
             $helper,
             $activationContext,
             $scheduleStorage,
@@ -813,19 +837,25 @@ final class ScheduleApiControllerTest extends TestCase
             $this->createStub(QueuedWindowStorageInterface::class),
             new CompiledRulesProvider([]),
             new class extends PreAnnounceStorage {
-                public function load(): ?PreAnnounceData { return null; }
+                public function load(): ?PreAnnounceData
+                {
+                    return null;
+                }
             },
         ) extends ScheduleApiController {
-            #[\Override]
-            protected function isAllowedToManage(): bool { return true; }
+            #[Override]
+            protected function isAllowedToManage(): bool
+            {
+                return true;
+            }
 
-            #[\Override]
+            #[Override]
             protected function json(mixed $data, int $status = 200, array $headers = [], array $context = []): \Symfony\Component\HttpFoundation\JsonResponse
             {
                 return new \Symfony\Component\HttpFoundation\JsonResponse($data, $status, $headers);
             }
 
-            #[\Override]
+            #[Override]
             protected function getPimcoreUser(bool $proxyUser = false): \Pimcore\Security\User\User|\Pimcore\Model\User|null
             {
                 return null;

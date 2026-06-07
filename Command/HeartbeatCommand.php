@@ -13,6 +13,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:heartbeat',
@@ -82,14 +85,14 @@ final class HeartbeatCommand extends Command
 
         $ttlMinutes = $flagTtl ?? $originalTtl ?? 0;
 
-        $newExpiresAt = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify(\sprintf('+%d minutes', $ttlMinutes));
+        $newExpiresAt = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify(\sprintf('+%d minutes', $ttlMinutes));
 
         $newOriginalTtl = $flagTtl ?? $originalTtl;
 
         $this->context->updateExpiry($newExpiresAt, $newOriginalTtl, null);
 
         $this->logger->info('Heartbeat accepted', [
-            'expires_at'           => $newExpiresAt->format(\DateTimeInterface::ATOM),
+            'expires_at'           => $newExpiresAt->format(DateTimeInterface::ATOM),
             'original_ttl_minutes' => $newOriginalTtl,
         ]);
 

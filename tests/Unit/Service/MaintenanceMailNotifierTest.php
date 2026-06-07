@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\BundleConfiguration;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
+use DateTimeImmutable;
 
 final class MaintenanceMailNotifierTest extends TestCase
 {
@@ -108,7 +109,7 @@ final class MaintenanceMailNotifierTest extends TestCase
             $this->makeConfig(recipients: ['global@x.com'], preAnnounceRecipients: ['team@x.com']),
             $logger,
         );
-        $data = new PreAnnounceData(new \DateTimeImmutable('+1 hour'), 'UTC', null, null);
+        $data = new PreAnnounceData(new DateTimeImmutable('+1 hour'), 'UTC', null, null);
         // Pimcore\Mail is available in test env, so sending is attempted
         $notifier->notifyPreAnnounce($data);
 

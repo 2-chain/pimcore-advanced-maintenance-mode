@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
+
 class PendingHealthCheckStorage
 {
     private const KEY = 'advanced_maintenance_pending_health_check';
@@ -20,7 +24,7 @@ class PendingHealthCheckStorage
         \Pimcore\Model\Tool\TmpStore::set(self::KEY, [
             'retry_count'    => 0,
             'triggered_by'   => $triggeredBy,
-            'deactivated_at' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(\DateTimeInterface::ATOM),
+            'deactivated_at' => (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format(DateTimeInterface::ATOM),
         ]);
     }
 

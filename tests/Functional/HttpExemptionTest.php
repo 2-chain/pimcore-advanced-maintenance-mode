@@ -12,12 +12,24 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Tests\Functional\Fixtures\Stub
 
 final class HttpExemptionTest extends TestCase
 {
+    private ?TestKernel $kernel = null;
+
+    protected function tearDown(): void
+    {
+        $this->kernel?->shutdown();
+        $this->kernel = null;
+        // Symfony kernel boot registers exception handlers; restore them so PHPUnit
+        // does not flag these tests as risky for unremoved handlers.
+        restore_exception_handler();
+        parent::tearDown();
+    }
+
     /** @param array<string, mixed> $config */
     private function bootKernel(array $config = []): TestKernel
     {
-        $kernel = new TestKernel('test', false, $config);
-        $kernel->boot();
-        return $kernel;
+        $this->kernel = new TestKernel('test', false, $config);
+        $this->kernel->boot();
+        return $this->kernel;
     }
 
     public function testMaintenanceOffReturns200(): void

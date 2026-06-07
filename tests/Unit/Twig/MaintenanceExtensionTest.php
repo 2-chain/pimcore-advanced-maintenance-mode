@@ -14,6 +14,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceBannerRende
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\PreAnnounceBannerProvider;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Twig\MaintenanceExtension;
+use DateTimeImmutable;
+use DateTimeZone;
 
 final class MaintenanceExtensionTest extends TestCase
 {
@@ -152,7 +154,7 @@ final class MaintenanceExtensionTest extends TestCase
         $scopeRaw = ['path_prefixes' => ['/shop'], 'site_ids' => [2]];
         $context = $this->contextWithScope($scopeRaw);
 
-        $futureAt = new \DateTimeImmutable('+2 hours', new \DateTimeZone('UTC'));
+        $futureAt = new DateTimeImmutable('+2 hours', new DateTimeZone('UTC'));
         $preAnnounceData = new PreAnnounceData(
             at: $futureAt,
             timezone: 'UTC',
@@ -176,7 +178,7 @@ final class MaintenanceExtensionTest extends TestCase
     {
         $context = $this->contextWithScope(null);
 
-        $futureAt = new \DateTimeImmutable('+2 hours', new \DateTimeZone('UTC'));
+        $futureAt = new DateTimeImmutable('+2 hours', new DateTimeZone('UTC'));
         $preAnnounceData = new PreAnnounceData(
             at: $futureAt,
             timezone: 'UTC',

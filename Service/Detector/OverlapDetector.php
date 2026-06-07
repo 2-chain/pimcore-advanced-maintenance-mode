@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Detector;
 
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
+use DateTimeImmutable;
 
 final class OverlapDetector
 {
@@ -45,8 +46,8 @@ final class OverlapDetector
         [$oneTime, $recurring] = $a->isRecurring() ? [$b, $a] : [$a, $b];
         assert($oneTime->from !== null && $oneTime->to !== null);
 
-        $mid = (new \DateTimeImmutable())->setTimestamp(
-            (int)(($oneTime->from->getTimestamp() + $oneTime->to->getTimestamp()) / 2)
+        $mid = (new DateTimeImmutable())->setTimestamp(
+            (int) (($oneTime->from->getTimestamp() + $oneTime->to->getTimestamp()) / 2)
         );
 
         foreach ([$oneTime->from, $mid, $oneTime->to] as $probe) {

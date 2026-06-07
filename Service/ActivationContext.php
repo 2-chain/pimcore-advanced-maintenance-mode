@@ -6,6 +6,8 @@ namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
 
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\MaintenanceScope;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextStorageInterface;
+use DateTimeImmutable;
+use DateTimeInterface;
 
 final class ActivationContext
 {
@@ -26,13 +28,13 @@ final class ActivationContext
         return $this->storage->load()['activated_by_schedule_window_id'] ?? null;
     }
 
-    public function getExpectedEndAt(): ?\DateTimeImmutable
+    public function getExpectedEndAt(): ?DateTimeImmutable
     {
         $raw = $this->storage->load()['expected_end_at'] ?? null;
         if ($raw === null) {
             return null;
         }
-        $dt = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $raw);
+        $dt = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $raw);
         return $dt !== false ? $dt : null;
     }
 
@@ -41,13 +43,13 @@ final class ActivationContext
         return $this->storage->load()['activated_by_health_check_failure'];
     }
 
-    public function getExpiresAt(): ?\DateTimeImmutable
+    public function getExpiresAt(): ?DateTimeImmutable
     {
         $raw = $this->storage->load()['expires_at'] ?? null;
         if ($raw === null) {
             return null;
         }
-        $dt = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $raw);
+        $dt = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $raw);
         return $dt !== false ? $dt : null;
     }
 
@@ -56,13 +58,13 @@ final class ActivationContext
         return $this->storage->load()['original_ttl_minutes'] ?? null;
     }
 
-    public function getWarningEmittedAt(): ?\DateTimeImmutable
+    public function getWarningEmittedAt(): ?DateTimeImmutable
     {
         $raw = $this->storage->load()['warning_emitted_at'] ?? null;
         if ($raw === null) {
             return null;
         }
-        $dt = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $raw);
+        $dt = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $raw);
         return $dt !== false ? $dt : null;
     }
 
@@ -94,14 +96,14 @@ final class ActivationContext
      * Merge-update only the three TTL fields without touching reason, retry_after, or other fields.
      */
     public function updateExpiry(
-        ?\DateTimeImmutable $expiresAt,
+        ?DateTimeImmutable $expiresAt,
         ?int $originalTtlMinutes,
-        ?\DateTimeImmutable $warningEmittedAt,
+        ?DateTimeImmutable $warningEmittedAt,
     ): void {
         $this->storage->updateExpiry(
-            $expiresAt?->format(\DateTimeInterface::ATOM),
+            $expiresAt?->format(DateTimeInterface::ATOM),
             $originalTtlMinutes,
-            $warningEmittedAt?->format(\DateTimeInterface::ATOM),
+            $warningEmittedAt?->format(DateTimeInterface::ATOM),
         );
     }
 

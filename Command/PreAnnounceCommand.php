@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command;
@@ -13,6 +14,10 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifie
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceData;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
+use Exception;
 
 #[AsCommand(
     name: 'pimcore:advanced-maintenance:pre-announce',
@@ -58,21 +63,21 @@ final class PreAnnounceCommand extends Command
         $tzRaw = $input->getOption('timezone');
         $tz    = \is_string($tzRaw) ? $tzRaw : 'UTC';
         try {
-            $timezone = new \DateTimeZone($tz);
-        } catch (\Exception) {
+            $timezone = new DateTimeZone($tz);
+        } catch (Exception) {
             $output->writeln('<error>Invalid timezone: ' . $tz . '</error>');
             return Command::FAILURE;
         }
 
-        $at = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $atRaw, $timezone)
-            ?: \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $atRaw);
+        $at = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $atRaw, $timezone)
+            ?: DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $atRaw);
         if ($at === false) {
             $output->writeln('<error>Cannot parse --at: "' . $atRaw . '". Use Y-m-d H:i:s or ISO8601.</error>');
             return Command::FAILURE;
         }
 
-        $atUtc = $at->setTimezone(new \DateTimeZone('UTC'));
-        $now   = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $atUtc = $at->setTimezone(new DateTimeZone('UTC'));
+        $now   = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         if ($atUtc <= $now) {
             $output->writeln('<error>--at must be in the future</error>');
             return Command::FAILURE;

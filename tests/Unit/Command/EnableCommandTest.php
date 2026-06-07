@@ -15,6 +15,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\ContextS
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PreAnnounceStorage;
+use DateTimeImmutable;
+use DateTimeInterface;
 
 final class EnableCommandTest extends TestCase
 {
@@ -173,7 +175,10 @@ final class EnableCommandTest extends TestCase
 
         $preAnnounceStorage = new class extends PreAnnounceStorage {
             public bool $cleared = false;
-            public function clear(): void { $this->cleared = true; }
+            public function clear(): void
+            {
+                $this->cleared = true;
+            }
         };
 
         $tester = new CommandTester($this->makeEnableCommand($helper, $context, $preAnnounceStorage));
@@ -191,7 +196,8 @@ final class EnableCommandTest extends TestCase
         $mailNotifier->expects(self::once())->method('notifyMaintenanceStart');
 
         $tester = new CommandTester($this->makeEnableCommand(
-            $helper, $context,
+            $helper,
+            $context,
             config: $this->makeConfig(mailOnStart: true),
             mailNotifier: $mailNotifier,
         ));
@@ -203,7 +209,7 @@ final class EnableCommandTest extends TestCase
 
     public function testExpiresInFlagSetsExpiresAt(): void
     {
-        $before = new \DateTimeImmutable('now UTC');
+        $before = new DateTimeImmutable('now UTC');
 
         $helper = $this->createMock(MaintenanceModeHelperInterface::class);
         $helper->method('activate');
@@ -217,7 +223,7 @@ final class EnableCommandTest extends TestCase
         self::assertSame(60, $storage->originalTtlMinutes);
         self::assertNotNull($storage->expiresAt);
 
-        $expiresAt = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $storage->expiresAt);
+        $expiresAt = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $storage->expiresAt);
         self::assertNotFalse($expiresAt);
         $expectedMin = $before->modify('+60 minutes')->getTimestamp();
         self::assertGreaterThanOrEqual($expectedMin - 5, $expiresAt->getTimestamp());
@@ -245,7 +251,8 @@ final class EnableCommandTest extends TestCase
 
         [$context, $storage] = $this->fakeContext();
         $tester = new CommandTester($this->makeEnableCommand(
-            $helper, $context,
+            $helper,
+            $context,
             config: $this->makeConfig(defaultTtl: 30),
         ));
 
@@ -302,7 +309,8 @@ final class EnableCommandTest extends TestCase
 
         [$context, $storage] = $this->fakeContext();
         $tester = new CommandTester($this->makeEnableCommand(
-            $helper, $context,
+            $helper,
+            $context,
             config: $this->makeConfig(defaultTtl: 30),
         ));
 
@@ -357,7 +365,8 @@ final class EnableCommandTest extends TestCase
                 $this->originalTtl  = $originalTtlMinutes;
             }
 
-            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void {
+            public function updateExpiry(?string $expiresAt, ?int $originalTtlMinutes, ?string $warningEmittedAt): void
+            {
                 $this->expiresAt   = $expiresAt;
                 $this->originalTtl = $originalTtlMinutes;
             }

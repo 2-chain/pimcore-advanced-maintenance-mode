@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service;
 
 use Psr\Log\LoggerInterface;
+use DateTimeInterface;
+use Throwable;
 
 class MaintenanceWebhookNotifier
 {
@@ -17,16 +19,22 @@ class MaintenanceWebhookNotifier
     {
         $this->fire('pre_announce', [
             'reason' => $data->reason,
-            'at'     => $data->at->format(\DateTimeInterface::ATOM),
+            'at'     => $data->at->format(DateTimeInterface::ATOM),
         ]);
     }
 
     public function notifyMaintenanceStart(?string $reason, ?int $retryAfter, ?string $activatedBy): void
     {
         $payload = [];
-        if ($reason !== null) { $payload['reason'] = $reason; }
-        if ($retryAfter !== null) { $payload['retryAfter'] = $retryAfter; }
-        if ($activatedBy !== null) { $payload['activatedBy'] = $activatedBy; }
+        if ($reason !== null) {
+            $payload['reason'] = $reason;
+        }
+        if ($retryAfter !== null) {
+            $payload['retryAfter'] = $retryAfter;
+        }
+        if ($activatedBy !== null) {
+            $payload['activatedBy'] = $activatedBy;
+        }
         $this->fire('maintenance_start', $payload);
     }
 
@@ -71,7 +79,7 @@ class MaintenanceWebhookNotifier
                         'event'      => $event,
                     ]);
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->logger->warning('[MaintenanceWebhookNotifier] Webhook request failed.', [
                     'url'       => $url,
                     'event'     => $event,

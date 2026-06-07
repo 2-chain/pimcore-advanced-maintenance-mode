@@ -10,6 +10,7 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Command\ScheduleCancelCommand;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Model\ScheduleWindow;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\Interfaces\QueuedWindowStorageInterface;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Repository\ScheduleStorage;
+use DateTimeImmutable;
 
 final class ScheduleCancelCommandTest extends TestCase
 {
@@ -17,10 +18,15 @@ final class ScheduleCancelCommandTest extends TestCase
     {
         $storage = $this->createMock(ScheduleStorage::class);
         $storage->method('findById')->with('w1')->willReturn(
-            new ScheduleWindow('w1', 'UTC', null,
-                new \DateTimeImmutable('2026-06-03T02:00:00Z'),
-                new \DateTimeImmutable('2026-06-03T04:00:00Z'),
-                null, null)
+            new ScheduleWindow(
+                'w1',
+                'UTC',
+                null,
+                new DateTimeImmutable('2026-06-03T02:00:00Z'),
+                new DateTimeImmutable('2026-06-03T04:00:00Z'),
+                null,
+                null
+            )
         );
         $storage->expects(self::once())->method('remove')->with('w1');
 

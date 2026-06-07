@@ -136,7 +136,11 @@ class ScheduleStorage
         if (!$this->tmpStoreAvailable()) {
             return null;
         }
-        $entry = \Pimcore\Model\Tool\TmpStore::get($key);
+        try {
+            $entry = \Pimcore\Model\Tool\TmpStore::get($key);
+        } catch (\Throwable) {
+            return null;
+        }
         if ($entry === null) {
             return null;
         }
@@ -149,6 +153,10 @@ class ScheduleStorage
         if (!$this->tmpStoreAvailable()) {
             return;
         }
-        \Pimcore\Model\Tool\TmpStore::set($key, $data);
+        try {
+            \Pimcore\Model\Tool\TmpStore::set($key, $data);
+        } catch (\Throwable) {
+            // Pimcore not bootstrapped — no-op
+        }
     }
 }

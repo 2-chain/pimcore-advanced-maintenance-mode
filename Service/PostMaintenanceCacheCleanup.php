@@ -9,6 +9,7 @@ use Override;
 use Pimcore\Maintenance\TaskInterface;
 use Pimcore\Tool\MaintenanceModeHelperInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 #[WithMonologChannel('advanced_maintenance_mode')]
 final class PostMaintenanceCacheCleanup implements TaskInterface
@@ -29,7 +30,7 @@ final class PostMaintenanceCacheCleanup implements TaskInterface
             try {
                 \Pimcore\Cache::clearAll();
                 $this->logger->info('PostMaintenanceCacheCleanup: cleared Pimcore cache after maintenance.');
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->logger->warning('PostMaintenanceCacheCleanup: cache clear failed.', ['error' => $e->getMessage()]);
             }
         }
