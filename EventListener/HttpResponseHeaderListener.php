@@ -36,7 +36,7 @@ final class HttpResponseHeaderListener implements EventSubscriberInterface
         if ($match instanceof ExemptionMatch) {
             $response->headers->set('X-Maintenance-Bypass', $match->ruleId);
             if (($reason = $this->context->getReason()) !== null) {
-                $response->headers->set('X-Maintenance-Reason', $reason);
+                $response->headers->set('X-Maintenance-Reason', $this->sanitizeHeaderValue($reason));
             }
             return;
         }
@@ -50,7 +50,12 @@ final class HttpResponseHeaderListener implements EventSubscriberInterface
             $response->headers->set('Retry-After', (string) $retryAfter);
         }
         if (($reason = $this->context->getReason()) !== null) {
-            $response->headers->set('X-Maintenance-Reason', $reason);
+            $response->headers->set('X-Maintenance-Reason', $this->sanitizeHeaderValue($reason));
         }
+    }
+
+    private function sanitizeHeaderValue(string $value): string
+    {
+        return str_replace(["\r", "\n", "\0"], '', $value);
     }
 }

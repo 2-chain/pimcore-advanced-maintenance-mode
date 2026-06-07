@@ -66,6 +66,10 @@ class ScheduleApiController extends UserAwareController
     #[Route('/admin/advanced-maintenance-mode/schedules', name: 'advanced_maintenance_schedules', methods: ['GET'])]
     public function schedules(): JsonResponse
     {
+        if (!$this->isAllowedToManage()) {
+            return $this->json(['error' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+        }
+
         $now      = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $windows  = $this->scheduleStorage->findAll();
         $activeId = $this->activationContext->getActivatedByScheduleWindowId();
@@ -320,6 +324,10 @@ class ScheduleApiController extends UserAwareController
     #[Route('/admin/advanced-maintenance-mode/schedules/history', name: 'advanced_maintenance_schedules_history', methods: ['GET'])]
     public function getHistory(Request $request): JsonResponse
     {
+        if (!$this->isAllowedToManage()) {
+            return $this->json(['error' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+        }
+
         $page             = max(1, (int) $request->query->get('page', 1));
         $pageSize         = min(100, max(1, (int) $request->query->get('pageSize', 25)));
         $scheduleWindowId = $request->query->get('scheduleWindowId');
@@ -327,8 +335,23 @@ class ScheduleApiController extends UserAwareController
         $startedAfterRaw  = $request->query->get('startedAfter');
         $startedBeforeRaw = $request->query->get('startedBefore');
 
-        $startedAfter  = $startedAfterRaw !== null ? new DateTimeImmutable($startedAfterRaw) : null;
-        $startedBefore = $startedBeforeRaw !== null ? new DateTimeImmutable($startedBeforeRaw) : null;
+        $startedAfter = null;
+        if ($startedAfterRaw !== null) {
+            try {
+                $startedAfter = new DateTimeImmutable($startedAfterRaw);
+            } catch (\Exception) {
+                return $this->json(['error' => 'Invalid startedAfter format'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        }
+
+        $startedBefore = null;
+        if ($startedBeforeRaw !== null) {
+            try {
+                $startedBefore = new DateTimeImmutable($startedBeforeRaw);
+            } catch (\Exception) {
+                return $this->json(['error' => 'Invalid startedBefore format'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        }
 
         $records = $this->historyRepo->findPaginated($page, $pageSize, $scheduleWindowId, $startedAfter, $startedBefore);
         $total   = $this->historyRepo->count($scheduleWindowId);

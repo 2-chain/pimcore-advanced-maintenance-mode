@@ -12,6 +12,8 @@ use TwoChain\PimcoreAdvancedMaintenanceModeBundle\HealthCheck\Interfaces\HealthC
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Maintenance\PostMaintenanceCheckTask;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\ActivationContext;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Interfaces\ContextStorageInterface;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceMailNotifier;
+use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\MaintenanceWebhookNotifier;
 use TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\PendingHealthCheckStorage;
 
 final class PostMaintenanceCheckTaskTest extends TestCase
@@ -256,14 +258,11 @@ final class PostMaintenanceCheckTaskTest extends TestCase
             self::stringContains('Health checks failed after 3 attempts'),
         );
 
-        $mailNotifier = new class {
-            public bool $called = false;
-            public function notifyMaintenanceStart(): void { $this->called = true; }
-        };
-        $webhookNotifier = new class {
-            public bool $called = false;
-            public function notifyMaintenanceStart(): void { $this->called = true; }
-        };
+        $mailNotifier = $this->createMock(MaintenanceMailNotifier::class);
+        $mailNotifier->expects(self::once())->method('notifyMaintenanceStart');
+
+        $webhookNotifier = $this->createMock(MaintenanceWebhookNotifier::class);
+        $webhookNotifier->expects(self::once())->method('notifyMaintenanceStart');
 
         $task = new PostMaintenanceCheckTask(
             pendingStorage: $pendingStorage,
@@ -278,9 +277,6 @@ final class PostMaintenanceCheckTaskTest extends TestCase
         );
 
         $task->execute();
-
-        self::assertTrue($mailNotifier->called);
-        self::assertTrue($webhookNotifier->called);
     }
 
     public function testReEntrySetsFlagOnActivationContext(): void

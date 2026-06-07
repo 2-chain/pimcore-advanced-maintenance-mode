@@ -77,7 +77,7 @@ services:
     # CompiledRulesProvider holds the SCALAR serialized rules in its argument.
     # The Extension and AttributeExemptionDiscoveryPass populate $rulesData.
     # XmlDumper handles scalar arrays fine, unlike when we used Rule objects directly.
-    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\CompiledRulesProvider:
+    TwoChain\PimcoreAdvancedMaintenanceModeBundle\Service\Provider\CompiledRulesProvider:
         arguments:
             $rulesData: []
 
